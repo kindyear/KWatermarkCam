@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-08",
+  "device": {
+    "model": "MI 6",
+    "android": "14",
+    "api": 34
+  },
+  "unit_tests": [
+    {
+      "name": "cn.kindyear.kwatermarkcam.CameraCapabilitiesTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cn.kindyear.kwatermarkcam.FieldFormatterTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cn.kindyear.kwatermarkcam.LocationProviderPolicyTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "instrumentation": {
+    "tests": 13,
+    "failures": 0,
+    "duration_seconds": 12.958
+  },
+  "artifacts": {
+    "app/build/outputs/apk/debug/app-debug.apk": {
+      "bytes": 79602735,
+      "sha256": "0d44c8534f5d2fe6f6493169f4405891e71d1a1eff0c8a75d9d6e4674e0cd522"
+    },
+    "app/build/outputs/apk/release/app-release-unsigned.apk": {
+      "bytes": 4759372,
+      "sha256": "f08e65dc811fd8fb086fda2bca66bfe9ed79a68e3f3f41605f9c474ea87c64b6"
+    }
+  }
+}

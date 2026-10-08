@@ -1,0 +1,22 @@
+.gradle/
+.kotlin/
+.idea/
+**/build/
+local.properties
+*.iml
+.DS_Store
+*.jks
+*.keystore
+
+# Signing and generated release assets
+*.p12
+*.pfx
+*.pem
+*.key
+.env
+.env.*
+secrets/
+signing/
+release-assets/
+release-assets-notes.md
+__pycache__/

@@ -1,0 +1,100 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    name: Verify release tag and tests
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/android-environment
+      - name: Verify tag matches app version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python3 scripts/release.py validate --tag "$RELEASE_TAG"
+          python3 -m unittest discover -s scripts -p 'test_*.py'
+      - name: Build and verify
+        run: ./gradlew assembleDebug testDebugUnitTest assembleDebugAndroidTest lintDebug --no-daemon --max-workers=1 --console=plain
+      - name: Verify database schema
+        run: git diff --exit-code -- app/schemas
+      - name: Upload verification reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-reports-${{ github.ref_name }}
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          retention-days: 30
+  publish:
+    name: Sign and publish
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/android-environment
+      - name: Restore release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          python3 - <<'PY'
+          import base64, os
+          from pathlib import Path
+          secret = os.environ.get('KEYSTORE_BASE64', '')
+          if not secret:
+              raise SystemExit('Missing ANDROID_KEYSTORE_BASE64 secret')
+          target = Path(os.environ['RUNNER_TEMP']) / 'release.keystore'
+          target.write_bytes(base64.b64decode(secret, validate=True))
+          target.chmod(0o600)
+          PY
+      - name: Build signed release APK and bundle
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          : "${ANDROID_KEYSTORE_PASSWORD:?Missing signing password}"
+          : "${ANDROID_KEY_ALIAS:?Missing signing alias}"
+          : "${ANDROID_KEY_PASSWORD:?Missing key password}"
+          ./gradlew assembleRelease bundleRelease --no-daemon --max-workers=1 --console=plain
+      - name: Verify signature and prepare assets
+        run: python3 scripts/release.py package --tag "$RELEASE_TAG"
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          flags=()
+          if [[ "$RELEASE_TAG" == v0.* || "$RELEASE_TAG" == *-* ]]; then flags+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" release-assets/* \
+            --verify-tag --title "KWatermarkCam $RELEASE_TAG" \
+            --notes-file release-assets-notes.md "${flags[@]}"
+      - name: Clean signing material
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          key = Path(os.environ['RUNNER_TEMP']) / 'release.keystore'
+          key.unlink(missing_ok=True)
+          PY
