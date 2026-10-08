@@ -2,7 +2,7 @@
 
 日期：2026-10-08（Asia/Singapore）。设备：用户配对的 Xiaomi MI 6，Android 14 / API 34，arm64-v8a。构建主机为 macOS，JDK 21，Gradle 9.7.1，Android SDK 37.0 / Build Tools 36.0.0。
 
-## 最终构建结果
+## 应用开发阶段构建结果
 
 | 命令 | 结果 |
 |---|---|
@@ -13,7 +13,7 @@
 | `./gradlew assembleRelease --max-workers=1` | 成功，R8 和资源缩减通过，生成未签名 Release APK，约 4.5 MiB |
 | 小米 6 AndroidJUnitRunner | **13 项通过，0 失败，12.958 秒** |
 
-Debug 版本包含 UI 调试工具和未缩减图标库，体积明显大于正式 Release。Release APK 未配置发布私钥，不能把未签名 APK 当作已发布版本。
+Debug 版本包含 UI 调试工具和未缩减图标库，体积明显大于正式 Release。上述开发阶段的 Release APK 未签名；后续发布配置及验证见本文末尾。
 
 设备测试直接通过 ADB 安装两个 APK 并执行：
 
@@ -24,7 +24,7 @@ adb -s <设备序列号> shell am instrument -w \
 
 可复用的 Gradle 入口为 `ANDROID_SERIAL=<设备序列号> ./gradlew connectedDebugAndroidTest`；本次设备测试采用上述 Runner 命令，未将未执行的 Gradle connected 命令记为通过。
 
-[原始设备测试结果](verification/device-tests.txt)包含 `OK (13 tests)`；[结果与 APK SHA-256](verification/summary.json)保存最终包指纹。单元测试详细报告位于 `app/build/reports/tests/testDebugUnitTest/`，Lint 报告位于 `app/build/reports/lint-results-debug.html`。
+[原始设备测试结果](verification/device-tests.txt)包含 `OK (13 tests)`；[结果与 APK SHA-256](verification/summary.json)保存开发阶段包指纹。单元测试详细报告位于 `app/build/reports/tests/testDebugUnitTest/`，Lint 报告位于 `app/build/reports/lint-results-debug.html`。
 
 ## 单元测试：10 项
 
@@ -91,3 +91,14 @@ adb -s <设备序列号> shell am instrument -w \
 按照用户要求，已停止并删除本次下载的 Android 17 模拟器、系统镜像及 AVD，没有用模拟器结果替代真机结果。
 
 仍需专门验证：真实 GPS/Geocoder 在不同网络与位置环境下的稳定性；首次/永久拒绝授权；设备仅一个摄像头；真实闪光曝光；多物理镜头；手势拖动与无障碍交互；字体最大缩放及屏幕旋转中的连续操作；真实磁盘满和低内存压力；断网条件下的完整拍摄回归。实现含相应处理，但这些场景不能仅凭当前测试宣称全部通过。
+
+## CI / 发布配置验证（2026-10-08）
+
+- 本机再次执行 `assembleDebug testDebugUnitTest assembleDebugAndroidTest lintDebug --no-daemon --max-workers=1`：成功，10 项 Android 单元测试通过。
+- 发布脚本的 6 项 Python 单元测试：通过，覆盖标签/版本匹配、非法版本、versionCode 边界与附件校验值。
+- actionlint 1.7.12 检查两份工作流：通过。
+- 使用仓库外持久化发布密钥执行 `assembleRelease bundleRelease`：成功。
+- 发布脚本检查 APK 实际包名和版本、`apksigner verify`、`jarsigner -verify`：通过，生成签名 APK、AAB、证书信息和 SHA256SUMS。
+- 本轮没有重跑真机测试，也没有在真机上卸载 Debug 应用或替换成 Release 包。
+
+云端执行结果可查看 [CI 记录](https://github.com/kindyear/KWatermarkCam/actions/workflows/ci.yml) 与 [Release 记录](https://github.com/kindyear/KWatermarkCam/actions/workflows/release.yml)。以具体运行的完成状态为准；云端 CI 不执行真机测试。
