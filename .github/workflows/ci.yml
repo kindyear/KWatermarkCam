@@ -29,7 +29,9 @@ jobs:
       - name: Unsigned release build
         run: ./gradlew assembleRelease bundleRelease --no-daemon --max-workers=1 --console=plain
       - name: Verify exported database schema is committed
-        run: git diff --exit-code -- app/schemas
+        run: |
+          git diff --exit-code -- app/schemas
+          test -z "$(git status --porcelain --untracked-files=all -- app/schemas)"
       - name: Upload debug APK
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
