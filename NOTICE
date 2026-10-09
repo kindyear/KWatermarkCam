@@ -1,0 +1,15 @@
+KWatermarkCam
+Copyright 2026 KINDYEAR
+
+Project source, original artwork and documentation are distributed under
+GNU GPL version 3 only. See LICENSE and the limited additional permission
+in LICENSE-EXCEPTION. There is no warranty.
+
+Third-party code and assets retain their respective copyright and licenses.
+Main bundled dependencies include AndroidX, Kotlin, Kotlin Coroutines and
+Dagger/Hilt (Apache License 2.0) and Google Play services client SDK libraries
+(Google's applicable SDK/API terms). The Android operating system is not
+part of this distribution. Development and test tools have their own
+licenses and are not relicensed by this project.
+
+Source and build instructions: https://github.com/kindyear/KWatermarkCam

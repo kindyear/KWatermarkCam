@@ -1,7 +1,11 @@
 package cn.kindyear.kwatermarkcam.feature.about
 
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -38,9 +42,8 @@ fun AboutScreen(back: () -> Unit) {
         Box(Modifier.fillMaxSize().padding(padding)) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Surface(Modifier.size(88.dp), shape = MaterialTheme.shapes.extraLarge, color = colors.primaryContainer) {
-                        Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.CameraAlt, null, Modifier.size(48.dp), tint = colors.onPrimaryContainer) }
-                    }
+                    Image(painterResource(R.drawable.ic_app), stringResource(R.string.app_logo),
+                        Modifier.size(96.dp).clip(RoundedCornerShape(24.dp)))
                     Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(top = 18.dp))
                     Text(stringResource(R.string.about_version_detail, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE), style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp))
                     Text(stringResource(R.string.about_tagline), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 20.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
@@ -73,9 +76,8 @@ fun AboutScreen(back: () -> Unit) {
             SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).navigationBarsPadding())
         }
     }
-    if (licenses) AlertDialog(onDismissRequest = { licenses = false }, title = { Text(stringResource(R.string.licenses)) },
-        text = { Text(stringResource(R.string.licenses_body), Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) },
-        confirmButton = { TextButton(onClick = { licenses = false }) { Text(stringResource(R.string.confirm)) } })
+    if (licenses) AppLicensesDialog { licenses = false }
+
 }
 
 @Composable

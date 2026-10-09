@@ -99,7 +99,16 @@ JPEG 质量 95%。不写入 GPS EXIF；可见水印仍可能包含地点。</str
     <string name="about">关于</string>
     <string name="version">版本 %1$s</string>
     <string name="licenses">开源许可证</string>
-    <string name="licenses_body">AndroidX、Kotlin、Coroutines、Dagger/Hilt：Apache License 2.0。
+    <string name="app_logo">KWatermarkCam 应用图标</string>
+    <string name="license_full">查看 GPL 全文</string>
+    <string name="license_summary">返回概览</string>
+    <string name="license_read_failed">无法读取许可证，请查看项目仓库中的 LICENSE。</string>
+    <string name="licenses_body">Copyright 2026 KINDYEAR。KWatermarkCam 按 GNU GPL 第 3 版发布（GPL-3.0-only），不提供任何担保。分发应用或修改版需按 GPL 提供对应源码；商业使用同样遵守 GPL。
+Google Play services 客户端 SDK 具有有限链接附加许可，应用自身仍按 GPL 发布；详情见下方全文。
+项目源码：https://github.com/kindyear/KWatermarkCam
+
+第三方组件：
+AndroidX、Kotlin、Coroutines、Dagger/Hilt：Apache License 2.0。
 Google Play services 受 Google APIs 服务条款约束。
 本应用无需账号、后台或网络拍照。</string>
     <string name="gallery_empty">还没有照片</string>
@@ -208,5 +217,4 @@ Google Play services 受 Google APIs 服务条款约束。
     <string name="about_version_detail">版本 %1$s · 构建 %2$d</string>
     <string name="about_made_by">由 KINDYEAR 开发</string>
     <string name="about_open_failed">无法打开链接，请检查浏览器</string>
-    <string name="about_license_note">第三方组件采用各自的许可证；公开仓库不代表项目源码已授予特定开源许可证。</string>
 </resources>

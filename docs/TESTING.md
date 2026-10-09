@@ -189,3 +189,12 @@ adb -s <设备序列号> shell am instrument -w \
 - 最终 K40 运行预设删除、预设数据库、文件夹、水印样式与照片管线五组设备测试：**24 项通过，0 失败，3.942 秒**。新增 4 项删除回归全部通过；修复前同组为 3 项失败。
 - 本轮相机生命周期自动化启动未完成，不覆盖上一轮 21 项成功记录，也不把本轮相机测试记为通过。原始未完成输出见 [记录](verification/preset-camera-runner-incomplete.txt)。
 - [最终设备结果](verification/preset-repository-tests.txt)、[构建与验证摘要](verification/preset-management-summary.json)。
+
+## 0.2.1 图标、README 与许可证（2026-10-09）
+
+- 应用、关于页、README 使用同源矢量品牌图形；增加 API 26 自适应图标与 API 33 单色主题图标，Manifest 设置 icon/roundIcon。Android 10+ 均可使用自适应资源。
+- 实际渲染并检查新图标和 README 横幅；本地文档链接检查通过。单色资源已编译，但未声称经过不同桌面主题实测。
+- 关于页内置 GPL 第 3 版和有限附加许可，许可证文件后台读取，提供概览/全文切换与版权、无担保、源码说明。
+- `assembleDebug testDebugUnitTest lintDebug --max-workers=1` 成功；10 项单元测试通过，Lint 无错误。发布脚本 6 项测试通过。
+- 本轮 ADB 设备列表为空，没有连接 K40；未安装模拟器，未重跑真机相机、主题图标或许可证交互测试。0.2.0 的设备结果不能当作本轮新图标验证。
+- 开发技术说明从 README 移到 DEVELOPMENT.md，README 以下载、使用、场景、隐私和常见问题为主。

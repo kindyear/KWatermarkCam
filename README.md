@@ -1,139 +1,102 @@
-# KWatermarkCam
+<div align="center">
 
-[![CI](https://github.com/kindyear/KWatermarkCam/actions/workflows/ci.yml/badge.svg)](https://github.com/kindyear/KWatermarkCam/actions/workflows/ci.yml)
-[![Release](https://github.com/kindyear/KWatermarkCam/actions/workflows/release.yml/badge.svg)](https://github.com/kindyear/KWatermarkCam/actions/workflows/release.yml)
+![KWatermarkCam](docs/assets/hero.svg)
 
-[下载 APK](https://github.com/kindyear/KWatermarkCam/releases) · [功能与限制](docs/FEATURES.md) · [架构](docs/ARCHITECTURE.md) · [测试证据](docs/TESTING.md) · [发布指南](docs/RELEASING.md)
+**拍下来，也记下来。**
 
-Android 原生工程水印相机，包名 `cn.kindyear.kwatermarkcam`。CameraX 拍摄原始照片，实时显示工程水印，按快门时冻结时间、地点与预设内容，在后台以照片原始尺寸合成 JPEG 并自动保存到系统相册。全部业务数据保存在本机，无账号或自建后端。
+给照片加上时间、地点与你的记录。
+工程现场、工作进度，或旅途中的一刻，都能用一张照片说明白。
 
-## 主要功能
+[**下载 Android 安装包**](https://github.com/kindyear/KWatermarkCam/releases) · [查看更新](https://github.com/kindyear/KWatermarkCam/releases/tag/v0.2.1) · [反馈问题](https://github.com/kindyear/KWatermarkCam/issues)
 
-- CameraX 原生拍摄，前后摄像头切换、拍照闪光灯、点击对焦、双指缩放及有效倍率按钮。
-- 工程项目水印：时间、工程名称、施工单位、地点、拍摄人员、备注；预览与原尺寸照片共用布局规则。
-- 同一模板保存多套预设，支持编辑、复制、重命名、删除、置顶和长按排序，快速切换并记住选择。
-- 前台定位、地址解析、明确标记缓存位置；无定位权限、无网络时仍可拍照，地点可以手填。
-- 高清合成后保存系统相册；失败拍摄保留并支持重试，最近照片预览。
-- Material 3、深浅主题、Android 12+ 动态配色，全部数据在本机保存。
+Android 10 及以上 · 免费使用 · 无需账号
 
-内置工程项目、考勤打卡、设备巡检、工作记录、旅行纪实五种样式。水印画面不打印模板名称，模板选择页保留名称和样式预览。新模板首次使用时按需创建默认预设。删除预设时仅在整个预设库为空时补建一套默认工程，删除某模板最后一套不会让它重新出现。多物理镜头切换为尽力支持，当前使用设备公开的 CameraX 缩放能力。跨系统、厂商和相机硬件的验证状态见测试文档。
+</div>
 
-## 安装
+## 一张照片，带上完整记录
 
-在 [GitHub Releases](https://github.com/kindyear/KWatermarkCam/releases) 下载 `KWatermarkCam-v<版本>.apk`，通过手机文件管理器打开安装，按系统提示允许安装来源。要求 Android 10 及以上。`.aab` 是商店分发包，不能直接安装。
+| 拍得方便 | 记得清楚 |
+| :--- | :--- |
+| 前后镜头切换、点击对焦、双指缩放 | 拍摄时自动加入时间，可使用定位或手填地点 |
+| 水印实时预览，拍前就能看到效果 | 工程名称、人员、备注等内容按需编辑和隐藏 |
+| 拍完自动保存到手机相册 | 多套内容预设随时切换，不用反复输入 |
+| 深浅主题，支持跟随手机壁纸配色 | 用文件夹整理不同项目，常用预设可以置顶 |
 
-每次发布附带 `SHA256SUMS` 和发布证书信息，后续发行使用固定签名。0.x 版本标记为预发布。开发 Debug 包与发行包的签名不同，不能直接相互覆盖；卸载开发包会清除预设和设置，切换前请保存所需信息。
+没有网络也能拍照。照片和预设保存在你的手机上，无需登录，也不会上传到应用服务器。
 
-## 环境与技术栈
+## 五种样式，照顾不同场景
 
-- 最低 Android 10 / API 29；Compile/Target API 37（Android 17）。
-- 单个 app module，Kotlin、Compose、Material 3、MVVM/Repository/单向数据流。
-- AGP 9.4.1 + Gradle 9.7.1；AGP 内置 Kotlin 2.2.10，Compose Compiler 同版本。
-- Compose BOM 2026.09.00、CameraX 1.6.2、Room 2.8.5、Hilt 2.60.1、KSP 2.3.12、DataStore 1.2.1。
-- JDK 17 或 21；建议使用支持 AGP 9.4 的新版 Android Studio。
-- 依赖使用 `gradle/libs.versions.toml` 固定管理；无动态版本。首次构建需要下载依赖，安装后的拍照不需要网络。
+| 样式 | 适合这样用 |
+| :--- | :--- |
+| **工程项目** | 记录项目、施工单位、人员和现场情况 |
+| **考勤打卡** | 突出时间，记录姓名、团队和到场地点 |
+| **设备巡检** | 记录设备名称、检查结果和巡检人员 |
+| **工作记录** | 留下任务、团队与工作进度 |
+| **旅行纪实** | 用轻盈的文字记录目的地和沿途见闻 |
 
-版本核对来源：[AGP 兼容性](https://developer.android.com/build/releases/agp-9-4-0-release-notes)、[Android 17 SDK](https://developer.android.com/about/versions/17/setup-sdk)、[Compose BOM](https://developer.android.com/develop/ui/compose/bom)、[CameraX](https://developer.android.com/jetpack/androidx/releases/camera)、[Room](https://developer.android.com/jetpack/androidx/releases/room)。
+**模板决定样式，预设保存内容。** 一个模板可以保存多套预设；预设也能按文件夹整理。水印不会额外打印模板名称。
 
-## 编译和运行
+## 三步开始拍摄
 
-1. 用 Android Studio 打开项目根目录，选择 JDK 17/21 并同步 Gradle。
-2. SDK Manager 安装 Android SDK Platform 37.0、Build Tools 36.0.0 和 Platform Tools。
-3. 在本机 `local.properties` 配置 `sdk.dir=/你的/Android/sdk`，该文件不提交。
-4. 执行：
+1. **安装**：前往 [发布页面](https://github.com/kindyear/KWatermarkCam/releases)，下载文件名以 `.apk` 结尾的安装包，在手机上打开。首次安装按系统提示允许安装来源。
+2. **填写**：打开应用并允许使用相机，选择水印模板。点击“内容预设”右侧的铅笔填写内容，文件夹图标可切换或管理预设。
+3. **拍摄**：确认预览，按下快门。带水印照片会自动存入相册中的 **WatermarkCamera**。保存失败时可以重试。
 
-```sh
-./gradlew assembleDebug
-./gradlew testDebugUnitTest
-./gradlew lintDebug
-```
+新版本使用相同发行签名，通常直接安装即可升级并保留预设。0.x 版本仍在完善中，欢迎反馈。
 
-Debug APK：`app/build/outputs/apk/debug/app-debug.apk`。连接 Android 10+ 手机，使用 Android Studio Run 或：
+## 你的内容，由你决定
 
-```sh
-adb -s <设备序列号> install -r app/build/outputs/apk/debug/app-debug.apk
-adb -s <设备序列号> shell am start -n cn.kindyear.kwatermarkcam/.MainActivity
-```
+- **相机权限**用于拍照；**定位权限**仅在开启定位后申请，拒绝定位也能拍摄。
+- 地点留空时可使用自动定位，也可以自己填写。没有网络时，地址解析可能失败，仍可手填地点。缓存位置会明确标记。
+- 不需要读取整个相册，也不申请后台定位。照片中显示的地点会随照片一起分享，分享前可以隐藏地点或关闭整张水印。
+- 预设和设置保存在本机。卸载应用会移除这些数据；已保存到系统相册的照片由系统管理。
 
-打开相机页按需授予相机权限。定位默认关闭，点击位置行开启并授权。地点字段留空时采用自动定位，填写内容时覆盖自动地点。首页“水印模板”行可切换模板；“内容预设”区左侧显示名称，右侧铅笔图标编辑当前、文件夹图标切换预设。预设选择与管理共用文件浏览器：通过文件夹和面包屑浏览所有模板的预设，每个条目标注所属模板；选中预设会同步切换模板。管理页支持新建多级文件夹、重命名文件夹、移动预设、新建/编辑/重命名/复制/置顶/删除预设，以及当前文件夹内长按排序。删除文件夹会把内容移到上一级，不会删除预设。
+## 常见问题
 
-Release 使用 R8 和资源缩减。发布签名由环境变量注入，私钥不包含在仓库中。没有签名变量时本地 `assembleRelease` 只产生未签名 APK；发行必须配置完整签名，详见发布指南。应用商店上架前还需准备隐私政策并完成兼容性矩阵。
+<details>
+<summary><b>下载页的 APK 和 AAB 应该选哪个？</b></summary>
 
-## 权限与隐私
+手机安装请选择 **APK**。AAB 是应用商店分发包，不能直接打开安装。
 
-- `CAMERA`：进入拍摄页面申请；拒绝时显示重新授权及系统设置入口。
-- `ACCESS_COARSE_LOCATION` / `ACCESS_FINE_LOCATION`：仅启用定位后按需申请；允许粗略位置，无后台定位权限。
-- 定位依赖包含普通权限 `ACCESS_NETWORK_STATE`；应用未声明 `INTERNET`。
-- 不申请存储/全相册读取权限；通过 MediaStore 管理本应用拥有的 URI。
-- 不写入 GPS EXIF、设备序列号或 MakerNote；保留方向规范化后的尺寸、拍摄时间及常用曝光参数。**可见水印中的地点仍会出现在照片上**，可手动编辑、隐藏地点或关闭水印。
-- 预设、设置、照片记录和失败拍摄结果留在本机，应用备份关闭。卸载应用会移除私有数据，已发布的相册照片由系统管理。
-- Fused Location Provider 优先使用；没有 Google Play services 时使用系统 GPS/网络定位。系统 Geocoder 可能依赖网络，离线时可使用坐标或手填地点，定位失败不影响拍照。
+</details>
 
-预设编辑页按预览、预设信息、水印内容、自动信息分区；显示字段在独立面板调整，恢复默认需确认，未保存内容仍有退出提示。设置中的应用名称进入独立关于页，包含本地存储说明、项目链接、版本与第三方许可证。
+<details>
+<summary><b>如何管理多个项目？</b></summary>
 
-## 数据存储
+点击首页的文件夹图标，进入“管理预设”。可以新建文件夹和预设，编辑、复制、重命名、置顶、移动，并在当前文件夹内长按手柄排序。删除文件夹时，内容会移到上一级。仅在整个预设库为空时，应用才会补建一套默认工程。
 
-Room 数据库 `kwatermarkcam.db`：`preset_folders` 保存文件夹 ID、名称、父目录和创建时间，跨模板组织预设；`presets` 保存文件夹 ID、模板 ID、名称、版本化 JSON 字段/隐藏状态、置顶、当前文件夹内分组排序及时间；`photos` 保存媒体 URI、尺寸、模板和预设 ID。模板定义是 Kotlin 配置，不占用数据库表。
+</details>
 
-DataStore：主题、动态颜色、相机默认配置、网格线、水印/定位开关及最后选择；独立 `location_cache` 保存位置测量时间、精度与地址，最多沿用 24 小时；界面与自动地点水印均明确标记缓存及测量时间。
+<details>
+<summary><b>为什么没有超广角倍率或闪光灯按钮？</b></summary>
 
-成功照片：`Pictures/WatermarkCamera/WM_yyyyMMdd_HHmmss_SSS_<唯一标识>.jpg`。原始拍摄结果和冻结水印暂存在 `files/pending_photos/`；只有成功发布并写入记录后才清除。保存失败时可在相机页重试或确认删除，进程重启后仍可恢复。MediaStore 使用 `IS_PENDING`，写入完成后公开；重试沿用已创建的 URI。
+应用按手机实际开放的相机能力显示控件。不同手机或镜头的倍率、闪光灯支持会有所不同。
 
-数据库版本为 2，v1/v2 导出的 schema 在 `app/schemas/`。`MIGRATION_1_2` 将旧预设保留在根目录，ID、内容、置顶、排序及照片记录均保留；升级不要求清除数据。未来升级必须增加显式 `Migration` 并使用旧 schema 测试，不允许破坏性迁移。字段 JSON 的 `schemaVersion` 独立于数据库版本；未知未来版本会报错并保留原数据。
+</details>
 
-## 项目结构
+<details>
+<summary><b>提示安装包签名不一致怎么办？</b></summary>
 
-```text
-app/src/main/java/cn/kindyear/kwatermarkcam/
-├── MainActivity.kt / WatermarkApplication.kt
-├── core/
-│   ├── camera/          CameraX 生命周期和控制
-│   ├── location/        前台定位、缓存、地理编码接口
-│   ├── watermark/       模板注册表和独立 Canvas 布局引擎
-│   ├── storage/         持久化拍摄日志、高清合成、MediaStore
-│   ├── database/        Room 和 JSON 编解码
-│   ├── datastore/       设置持久化
-│   └── designsystem/    Material 3 Theme 和页面骨架
-├── data/repository/     预设事务和持久化规则
-├── domain/              不可变业务模型和 Repository 接口
-├── feature/             camera / preset / watermark / gallery / settings
-├── navigation/          Navigation Compose
-└── di/                  Hilt 配置
-```
+开发调试版与发布页安装包的签名不同，无法直接相互覆盖。请先保留需要的预设信息；卸载会清除应用内数据。正式发行版之间可以直接升级。
 
-详细设计见 [架构说明](docs/ARCHITECTURE.md)，功能与边界见 [交付清单](docs/FEATURES.md)，实际验证证据见 [测试记录](docs/TESTING.md)。
+</details>
 
-## 增加模板与字段
+## 一起让它更好用
 
-在 `TemplateRegistry.templates` 注册新的 `WatermarkTemplate`：使用永久稳定的模板 ID 和字段 ID，标题/标签放入 `strings.xml`；字段指定类型、默认值、可编辑/隐藏状态和排序。每个模板可定义 `WatermarkLayoutSpec` 的相对宽度、字体、边距、行数等布局参数。现有表单自动根据字段定义生成，预设仍只保存字段值，不保存相机对象或 Compose 结构。
+遇到问题或有想法？欢迎 [提交反馈](https://github.com/kindyear/KWatermarkCam/issues)，附上手机型号、Android 版本和操作步骤。分享截图时请留意项目名称和位置等私人信息。
 
-`FieldFormatter` 支持文本、数字、日期、时间、日期时间、地址与坐标。新增字段类型时扩展枚举及格式化分支，并为需要的新编辑方式添加表单控件；图片、Logo、二维码等需要新的渲染块类型和 JSON schema 迁移。新增布局样式时扩展 `WatermarkStyle` 和独立 renderer 的测量/绘制策略，注册模板时提供样式、说明资源与字段；无需修改 CameraX 或预设表。拍摄日志保存布局参数，升级后重试照片仍使用快门时的布局。
+想参与开发，请看 [开发指南](docs/DEVELOPMENT.md)；[功能清单](docs/FEATURES.md)、[测试记录](docs/TESTING.md)和[更新说明](docs/releases/0.2.1.md)保留更详细的信息。
 
-新字段读取不到值时使用模板默认值；不要重用/更名已有字段 ID。未知旧字段通过 Map 保留，内容编辑不会主动丢弃，避免模板升级导致数据损失。
+## 许可证
 
-## 测试
+项目采用 [GNU GPL-3.0](LICENSE)。欢迎商业或非商业使用；分发应用或修改版时，需要按 GPL 提供对应源码并保留相同许可。单纯使用或私下修改不要求公开源码。第三方组件保留各自的许可；现有 Google 定位 SDK 的有限链接许可见 [附加许可](LICENSE-EXCEPTION)。详见 [许可说明](docs/LICENSING.md)。
 
-```sh
-./gradlew testDebugUnitTest
-./gradlew assembleDebugAndroidTest
-# 连接真实设备后（此命令会运行实际相机/相册测试）
-ANDROID_SERIAL=<设备序列号> ./gradlew connectedDebugAndroidTest
-```
+---
 
-测试包括格式化、相机能力过滤、模板默认值、预设 CRUD/排序/置顶/数据库重开、JSON 版本保护、长文本布局、全部八种 EXIF 方向、GPS 排除、MediaStore 发布与失败结果恢复；另有相机初始化、拍照、镜头切换和后台/前台恢复的真机测试。测试照片会在测试结束清理。不要把编译成功视作所有 Android 版本或所有厂商相机均已验证。
+<div align="center">
 
-构建排查：Debug Lint 与 Release 代码生成请分开运行；若工具出现读取 Hilt 临时生成源的内部错误，用 `--max-workers=1` 重试，详见测试记录。
+由 **KINDYEAR** 维护，**ChatGPT + Codex** 协作开发。
 
-## CI / 自动发布
+![由 ChatGPT + Codex 协作开发](docs/assets/chatgpt-codex.svg)
 
-GitHub Actions 使用固定提交 SHA 的 Actions、JDK 21 和已校验的 Gradle Wrapper。不创建或下载模拟器。
-
-| 触发条件 | 执行内容 |
-| --- | --- |
-| 推送 `main`、对 `main` 提交 PR、手动运行 CI | 版本校验、发布脚本测试、Debug APK、单元测试、Android 测试 APK 编译、Lint、独立 Release APK/AAB 构建、Room schema 检查；上传 Debug APK 与报告 |
-| 推送 `v*` 标签 | 校验标签与应用版本、执行测试和 Lint；从 Secrets 恢复发布密钥，构建并验签 APK/AAB，生成 SHA-256 和证书信息，创建 GitHub Release |
-| 在版本标签上手动运行 Release | 重试尚未成功发布的标签；已有 Release 不覆盖 |
-
-版本的唯一来源是 `gradle.properties` 中的 `app.versionName` 和 `app.versionCode`。修改版本、等待 CI 成功，再推送完全一致的 `v<版本>` 标签。PR 工作流只有读取权限，不访问发布 Secrets；只有发布任务具备创建 Release 的权限。GitHub Actions 无法代替真机相机和定位测试。
-
-签名设置、首发和后续升级流程见 [发布指南](docs/RELEASING.md)。Actions 依赖由 Dependabot 每月检查更新。
+</div>

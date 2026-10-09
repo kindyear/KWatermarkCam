@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-label="KWatermarkCam · 让照片留下时间与地点">
+<rect width="1200" height="420" rx="32" fill="#F0F7F4"/>
+<circle cx="1150" cy="12" r="205" fill="#DCEEE6"/><circle cx="1160" cy="28" r="145" fill="#E6F3ED"/>
+<g transform="translate(68 88) scale(2.25)"><rect width="108" height="108" rx="25" fill="#102E39"/><g transform="translate(54 54) scale(.86) translate(-54 -54)"><path fill="#ECFFF7" fill-rule="evenodd" d="M33,38H41L46,31H61L66,38H75A7,7 0,0 1,82,45V69A7,7 0,0 1,75,76H33A7,7 0,0 1,26,69V45A7,7 0,0 1,33,38Z M54,42A12,12 0,1 0,54,66A12,12 0,1 0,54,42Z"/><path fill="#71E3C2" fill-rule="evenodd" d="M54,46A8,8 0,1 0,54,62A8,8 0,1 0,54,46Z M54,50A4,4 0,1 1,54,58A4,4 0,1 1,54,50Z"/><path fill="#F8C86B" fill-rule="nonzero" d="M65,63H79A5,5 0,0 1,84,68V77A5,5 0,0 1,79,82H65A5,5 0,0 1,60,77V68A5,5 0,0 1,65,63Z"/><path fill="#102E39" fill-rule="nonzero" d="M66,68H78V71H66Z M66,74H74V77H66Z"/></g></g>
+<g fill="#102E39" font-family="system-ui, -apple-system, sans-serif">
+<text x="362" y="151" font-size="46" font-weight="750">KWatermarkCam</text>
+<text x="364" y="217" font-size="34" font-weight="600">让照片留下时间与地点</text>
+<text x="366" y="268" font-size="20" fill="#506B65">工程现场 · 工作记录 · 日常旅途</text>
+<rect x="364" y="298" width="121" height="34" rx="17" fill="#D6EAE2"/><text x="424" y="321" text-anchor="middle" font-size="16">无需账号</text>
+<rect x="498" y="298" width="121" height="34" rx="17" fill="#D6EAE2"/><text x="558" y="321" text-anchor="middle" font-size="16">离线拍摄</text>
+<rect x="632" y="298" width="121" height="34" rx="17" fill="#D6EAE2"/><text x="692" y="321" text-anchor="middle" font-size="16">本机保存</text>
+</g></svg>

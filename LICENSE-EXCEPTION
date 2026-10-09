@@ -1,0 +1,24 @@
+Additional permission under GNU GPL version 3 section 7
+
+Copyright 2026 KINDYEAR
+
+If you modify KWatermarkCam, or any covered work, by linking or combining it
+with the Google Play services Android client SDK libraries under the
+com.google.android.gms Maven group, the copyright holders of KWatermarkCam
+grant you additional permission to convey the resulting work.
+
+This permission is limited to those unmodified Google SDK libraries and
+their required Google SDK dependencies, used for the existing Android
+location integration. You must comply with the licenses and terms of those
+libraries. It does not grant any rights to Google's trademarks or services.
+
+The Corresponding Source you provide must include the source code for all
+GPL-covered parts of the combined work; the proprietary Google SDK libraries
+are excluded from that source requirement by this additional permission.
+All KWatermarkCam code, including modifications to it, remains covered by
+GNU GPL version 3. This permission does not allow distributing KWatermarkCam
+modifications as proprietary software.
+
+You may remove this additional permission from your version in accordance
+with GNU GPL version 3 section 7, for example when replacing the Google SDK
+with a GPL-compatible implementation.

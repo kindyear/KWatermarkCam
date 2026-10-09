@@ -84,6 +84,8 @@ def package_release(tag):
 
 {changes}
 
+对应源码与构建说明：[版本源码 ZIP](https://github.com/kindyear/KWatermarkCam/archive/refs/tags/{tag}.zip) · [开发指南](https://github.com/kindyear/KWatermarkCam/blob/{tag}/docs/DEVELOPMENT.md)。许可证及第三方许可说明包含在源码中。
+
 {maturity}具体真机验证范围与未验证场景见 docs/TESTING.md。自动流水线执行单元测试、Android 测试 APK 编译、Lint 和签名验证；不使用模拟器。
 
 首次从开发版 Debug APK 切换到发行 APK 时，Android 会因签名不同拒绝覆盖安装。请先保存需要的预设信息，再自行卸载开发版；卸载会清除应用私有数据。相册照片由系统管理。
