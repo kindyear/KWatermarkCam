@@ -30,7 +30,7 @@ class PresetDatabaseTest {
     }
     @After fun close() { db.close() }
     @Test fun templateDefaultsAndHiddenDynamicFields() {
-        assertEquals(1, registry.templates.size)
+        assertEquals(5, registry.templates.size)
         val template = registry.template("construction-default")
         assertEquals(6, template.fields.size)
         assertFalse(template.fields.first().editable)
@@ -63,7 +63,7 @@ class PresetDatabaseTest {
         repository.pin(b, true); repository.pin(a, true)
         list = repository.presets.first()
         assertEquals(listOf(b, a), list.take(2).map { it.id })
-        repository.reorder(default.templateId, listOf(a, b, copy, default.id))
+        repository.reorderFolder(null, listOf(a, b, copy, default.id))
         list = repository.presets.first()
         assertEquals(listOf(a, b, copy, default.id), list.map { it.id })
         repository.pin(a, false)
@@ -78,7 +78,7 @@ class PresetDatabaseTest {
         val original = repository.presets.first().single()
         val pinned = repository.saveDraft(null, original.templateId, "置顶", emptyMap(), emptySet())
         repository.pin(pinned, true)
-        val result = runCatching { repository.reorder(original.templateId, listOf(original.id, pinned)) }
+        val result = runCatching { repository.reorderFolder(null, listOf(original.id, pinned)) }
         assertTrue(result.isFailure)
         assertEquals(pinned, repository.presets.first().first().id)
     }

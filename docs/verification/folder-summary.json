@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-09",
+  "feature": "首页模板/预设入口和跨模板文件夹预设库",
+  "device": {
+    "model": "Xiaomi MI 6",
+    "android": "14",
+    "api": 34
+  },
+  "databaseVersion": 2,
+  "migration": "1 -> 2 preserves preset IDs/content/pins/order and photos",
+  "unitTests": {
+    "passed": 10,
+    "failed": 0
+  },
+  "deviceTests": {
+    "passed": 17,
+    "failed": 0,
+    "seconds": 9.68
+  },
+  "lintErrors": 0,
+  "builds": {
+    "debug": "passed",
+    "release": "passed (unsigned)"
+  },
+  "manualUiChecks": [
+    "template entry opens template picker",
+    "folder creation and breadcrumb navigation",
+    "new preset selects template and stores folder",
+    "folder browser selects preset and home updates",
+    "move preset to root",
+    "remove temporary preset/folder and restore original selection"
+  ],
+  "artifacts": {
+    "debug": {
+      "path": "app/build/outputs/apk/debug/app-debug.apk",
+      "bytes": 79656683,
+      "sha256": "94c9b1af50e62082cb62efb7aa10a052665764e9f30cced1b14688ee2545e629"
+    },
+    "releaseUnsigned": {
+      "path": "app/build/outputs/apk/release/app-release-unsigned.apk",
+      "bytes": 4716120,
+      "sha256": "9e476005c78c9f4eeb52d904c7f61a59de6c67884fe39f31ce869bf66a044024"
+    }
+  }
+}

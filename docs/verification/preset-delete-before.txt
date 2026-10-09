@@ -1,0 +1,95 @@
+
+cn.kindyear.kwatermarkcam.PresetDeletionTest:
+Error in deletingWholeLibraryCreatesExactlyOneUsableDefault(cn.kindyear.kwatermarkcam.PresetDeletionTest):
+java.lang.IllegalArgumentException: List has more than one element.
+	at kotlin.collections.CollectionsKt___CollectionsKt.single(_Collections.kt:621)
+	at cn.kindyear.kwatermarkcam.PresetDeletionTest$deletingWholeLibraryCreatesExactlyOneUsableDefault$1.invokeSuspend(PresetDeletionTest.kt:55)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:98)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)
+	at cn.kindyear.kwatermarkcam.PresetDeletionTest.deletingWholeLibraryCreatesExactlyOneUsableDefault(PresetDeletionTest.kt:49)
+
+Error in deletingLastOfOneTemplateKeepsOtherTemplatesWithoutRecreatingIt(cn.kindyear.kwatermarkcam.PresetDeletionTest):
+org.junit.ComparisonFailure: expected:<5[f06d4f0-88b5-4b4f-a89c-985f09574ccf]> but was:<5[b7f289d-0e78-47c4-a3dd-53774d5d0dc3]>
+	at org.junit.Assert.assertEquals(Assert.java:117)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at cn.kindyear.kwatermarkcam.PresetDeletionTest$deletingLastOfOneTemplateKeepsOtherTemplatesWithoutRecreatingIt$1.invokeSuspend(PresetDeletionTest.kt:34)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)
+	at cn.kindyear.kwatermarkcam.PresetDeletionTest.deletingLastOfOneTemplateKeepsOtherTemplatesWithoutRecreatingIt(PresetDeletionTest.kt:30)
+
+Error in startupDoesNotRecreateDeletedEngineeringWhenAnotherTemplateExists(cn.kindyear.kwatermarkcam.PresetDeletionTest):
+org.junit.ComparisonFailure: expected:<[52424f4d-9b26-41d2-ba23-1a9264da01fb]> but was:<[c54f8e86-7fb0-406f-a2c7-ce27e68dd41c]>
+	at org.junit.Assert.assertEquals(Assert.java:117)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at cn.kindyear.kwatermarkcam.PresetDeletionTest$startupDoesNotRecreateDeletedEngineeringWhenAnotherTemplateExists$1.invokeSuspend(PresetDeletionTest.kt:44)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)
+	at cn.kindyear.kwatermarkcam.PresetDeletionTest.startupDoesNotRecreateDeletedEngineeringWhenAnotherTemplateExists(PresetDeletionTest.kt:40)
+.
+
+Time: 0.184
+There were 3 failures:
+1) deletingWholeLibraryCreatesExactlyOneUsableDefault(cn.kindyear.kwatermarkcam.PresetDeletionTest)
+java.lang.IllegalArgumentException: List has more than one element.
+	at kotlin.collections.CollectionsKt___CollectionsKt.single(_Collections.kt:621)
+	at cn.kindyear.kwatermarkcam.PresetDeletionTest$deletingWholeLibraryCreatesExactlyOneUsableDefault$1.invokeSuspend(PresetDeletionTest.kt:55)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:98)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)
+	at cn.kindyear.kwatermarkcam.PresetDeletionTest.deletingWholeLibraryCreatesExactlyOneUsableDefault(PresetDeletionTest.kt:49)
+2) deletingLastOfOneTemplateKeepsOtherTemplatesWithoutRecreatingIt(cn.kindyear.kwatermarkcam.PresetDeletionTest)
+org.junit.ComparisonFailure: expected:<5[f06d4f0-88b5-4b4f-a89c-985f09574ccf]> but was:<5[b7f289d-0e78-47c4-a3dd-53774d5d0dc3]>
+	at org.junit.Assert.assertEquals(Assert.java:117)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at cn.kindyear.kwatermarkcam.PresetDeletionTest$deletingLastOfOneTemplateKeepsOtherTemplatesWithoutRecreatingIt$1.invokeSuspend(PresetDeletionTest.kt:34)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)
+	at cn.kindyear.kwatermarkcam.PresetDeletionTest.deletingLastOfOneTemplateKeepsOtherTemplatesWithoutRecreatingIt(PresetDeletionTest.kt:30)
+3) startupDoesNotRecreateDeletedEngineeringWhenAnotherTemplateExists(cn.kindyear.kwatermarkcam.PresetDeletionTest)
+org.junit.ComparisonFailure: expected:<[52424f4d-9b26-41d2-ba23-1a9264da01fb]> but was:<[c54f8e86-7fb0-406f-a2c7-ce27e68dd41c]>
+	at org.junit.Assert.assertEquals(Assert.java:117)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at cn.kindyear.kwatermarkcam.PresetDeletionTest$startupDoesNotRecreateDeletedEngineeringWhenAnotherTemplateExists$1.invokeSuspend(PresetDeletionTest.kt:44)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source:1)
+	at cn.kindyear.kwatermarkcam.PresetDeletionTest.startupDoesNotRecreateDeletedEngineeringWhenAnotherTemplateExists(PresetDeletionTest.kt:40)
+
+FAILURES!!!
+Tests run: 4,  Failures: 3
+
+

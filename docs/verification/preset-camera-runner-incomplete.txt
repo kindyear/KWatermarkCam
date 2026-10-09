@@ -1,0 +1,3 @@
+
+cn.kindyear.kwatermarkcam.CameraLifecycleTest:
+Runner stopped after 90-second timeout. No completed camera result; not counted as passed.

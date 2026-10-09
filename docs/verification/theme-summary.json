@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-09",
+  "device": "Xiaomi MI 6 / Android 14",
+  "checks": "actual camera-screen pixels after changing in-app theme and dynamic-color controls",
+  "modes": [
+    {
+      "mode": "light-dynamic",
+      "background": "#fff8f8",
+      "shutter": "#8b4a62"
+    },
+    {
+      "mode": "dark-dynamic",
+      "background": "#191114",
+      "shutter": "#ffb0ca"
+    },
+    {
+      "mode": "light-default",
+      "background": "#fef7ff",
+      "shutter": "#176678"
+    },
+    {
+      "mode": "dark-default",
+      "background": "#141218",
+      "shutter": "#8cd2e2"
+    }
+  ],
+  "build": "assembleDebug and lintDebug passed",
+  "lintErrors": 0,
+  "finalAppearance": {
+    "theme": "system",
+    "dynamic": true
+  },
+  "debugApkSha256": "90028aa259a7ae53c73accb59f175bce6803e7e06d4ff5451943c181061f074e"
+}

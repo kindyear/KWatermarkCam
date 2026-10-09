@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-09",
+  "feature": "five scene templates, grouped preset editor, independent About page",
+  "device": {
+    "name": "Redmi K40",
+    "model": "M2012K11AC",
+    "android": "13",
+    "api": 33
+  },
+  "unitTests": {
+    "passed": 10,
+    "failed": 0
+  },
+  "deviceTests": {
+    "passed": 21,
+    "failed": 0,
+    "seconds": 23.614
+  },
+  "lintErrors": 0,
+  "builds": {
+    "debug": "passed",
+    "release": "passed (unsigned)"
+  },
+  "manualUiChecks": [
+    "template catalog and rendered style previews",
+    "preset editor preview and grouped fields",
+    "About page and license dialog",
+    "field visibility toggle",
+    "reset defaults confirmation and cancellation",
+    "unsaved changes discarded without changing stored preset"
+  ],
+  "artifacts": {
+    "debug": {
+      "path": "app/build/outputs/apk/debug/app-debug.apk",
+      "bytes": 78750396,
+      "sha256": "a9fcec9e9aa7dd82db3adadd6f98fa33a393eb3ecef60e6cc0269d6e793b0ac8"
+    },
+    "releaseUnsigned": {
+      "path": "app/build/outputs/apk/release/app-release-unsigned.apk",
+      "bytes": 4859356,
+      "sha256": "9f418da781da9c0630440acd1b17f695b07618a2aee43aab3e43fc0b02595102"
+    }
+  }
+}

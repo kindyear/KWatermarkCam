@@ -1,0 +1,11 @@
+
+cn.kindyear.kwatermarkcam.CameraLifecycleTest:.
+cn.kindyear.kwatermarkcam.PhotoPipelineTest:.....
+cn.kindyear.kwatermarkcam.PresetDatabaseTest:.......
+cn.kindyear.kwatermarkcam.PresetFolderTest:....
+
+Time: 9.68
+
+OK (17 tests)
+
+

@@ -20,14 +20,14 @@ import cn.kindyear.kwatermarkcam.feature.gallery.GalleryScreen
 import cn.kindyear.kwatermarkcam.feature.preset.*
 import cn.kindyear.kwatermarkcam.feature.settings.SettingsScreen
 import cn.kindyear.kwatermarkcam.feature.watermark.TemplateScreen
+import cn.kindyear.kwatermarkcam.feature.about.AboutScreen
 
 @Composable
 fun AppNavigation(vm: CameraViewModel) {
     val nav = rememberNavController()
     val snackbar = remember { SnackbarHostState() }
     val resources = LocalResources.current
-    val entry by nav.currentBackStackEntryAsState()
-    val darkBars = entry?.destination?.route == "camera" || MaterialTheme.colorScheme.surface.luminance() < .5f
+    val darkBars = MaterialTheme.colorScheme.surface.luminance() < .5f
     val activity = LocalActivity.current
     val view = LocalView.current
     SideEffect {
@@ -49,8 +49,10 @@ fun AppNavigation(vm: CameraViewModel) {
         NavHost(navController = nav, startDestination = "camera") {
             composable("camera") { CameraScreen(vm) { nav.navigate(it) { launchSingleTop = true } } }
             composable("presets") { PresetScreen(vm, { nav.popBackStack() }, { nav.navigate("editor") }) }
+            composable("preset-picker") { PresetScreen(vm, { nav.popBackStack() }, { nav.navigate("editor") }, selecting = true, manage = { nav.navigate("presets") }) }
             composable("editor") { PresetEditorScreen(vm) { nav.popBackStack() } }
             composable("templates") { TemplateScreen(vm) { nav.popBackStack() } }
+            composable("about") { AboutScreen { nav.popBackStack() } }
             composable("gallery") { GalleryScreen(vm) { nav.popBackStack() } }
             composable("settings") { SettingsScreen(vm, { nav.popBackStack() }) { nav.navigate(it) } }
         }

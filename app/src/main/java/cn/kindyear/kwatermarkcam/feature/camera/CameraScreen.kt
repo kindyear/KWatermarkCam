@@ -52,12 +52,9 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.min
 
-private val cameraBackground = Color(0xFF101B20)
-private val cameraForeground = Color(0xFFF2F7F8)
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraScreen(vm: CameraViewModel, navigate: (String) -> Unit) {
+    val colors = MaterialTheme.colorScheme
     val ui by vm.ui.collectAsStateWithLifecycle()
     val capture by vm.capture.collectAsStateWithLifecycle()
     val hardware by vm.camera.state.collectAsStateWithLifecycle()
@@ -65,7 +62,6 @@ fun CameraScreen(vm: CameraViewModel, navigate: (String) -> Unit) {
     val context = LocalContext.current
     var permission by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
     var requested by rememberSaveable { mutableStateOf(false) }
-    var sheet by remember { mutableStateOf(false) }
     var discardPending by remember { mutableStateOf(false) }
     var rebind by remember { mutableIntStateOf(0) }
     val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { permission = it }
@@ -80,7 +76,7 @@ fun CameraScreen(vm: CameraViewModel, navigate: (String) -> Unit) {
         vm.bool("location", true)
         locationPermission.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION))
     }
-    Column(Modifier.fillMaxSize().background(cameraBackground).safeDrawingPadding()) {
+    Column(Modifier.fillMaxSize().background(colors.surface).safeDrawingPadding()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             CameraIcon(
                 when (ui.settings.flash) { "on" -> Icons.Default.FlashOn; "auto" -> Icons.Default.FlashAuto; else -> Icons.Default.FlashOff },
@@ -88,7 +84,7 @@ fun CameraScreen(vm: CameraViewModel, navigate: (String) -> Unit) {
                 enabled = hardware.hasFlash && !capture.busy,
             ) { vm.text("flash", when (ui.settings.flash) { "off" -> "on"; "on" -> "auto"; else -> "off" }) }
             TextButton(onClick = { vm.bool("wide", !ui.settings.wideAspect) }, enabled = !capture.busy) {
-                Text(stringResource(if (ui.settings.wideAspect) R.string.aspect_wide else R.string.aspect_standard), color = cameraForeground)
+                Text(stringResource(if (ui.settings.wideAspect) R.string.aspect_wide else R.string.aspect_standard), color = colors.onSurface)
             }
             Spacer(Modifier.weight(1f))
             CameraIcon(if (ui.settings.watermark) Icons.Default.Layers else Icons.Default.LayersClear, stringResource(R.string.show_watermark), !capture.busy) { vm.bool("watermark", !ui.settings.watermark) }
@@ -100,7 +96,7 @@ fun CameraScreen(vm: CameraViewModel, navigate: (String) -> Unit) {
                 PreviewArea(vm, ui, capture, hardware, permission, rebind, Modifier.weight(1f).fillMaxHeight()) { rebind++ }
                 Column(Modifier.width(236.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(8.dp)) {
                     LocationLine(position, ui.settings.location, ::requestLocation, vm::refreshLocation)
-                    CameraBottom(vm, ui, capture, hardware, navigate, { sheet = true })
+                    CameraBottom(vm, ui, capture, hardware, navigate, { navigate("preset-picker") })
                 }
             } else Column(Modifier.fillMaxSize()) {
                 PreviewArea(vm, ui, capture, hardware, permission, rebind, Modifier.weight(1f).fillMaxWidth()) { rebind++ }
@@ -110,39 +106,23 @@ fun CameraScreen(vm: CameraViewModel, navigate: (String) -> Unit) {
         if (!permission) {
             Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Button(onClick = { requested = true; cameraPermission.launch(Manifest.permission.CAMERA) }) { Text(stringResource(R.string.grant_camera)) }
-                TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))) }) { Text(stringResource(R.string.open_settings), color = cameraForeground) }
+                TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))) }) { Text(stringResource(R.string.open_settings), color = colors.onSurface) }
             }
         }
         // In landscape the controls are beside the preview, leaving the photo unobstructed.
         Box(Modifier.fillMaxWidth()) {
             val configuration = androidx.compose.ui.platform.LocalConfiguration.current
             if (configuration.orientation != android.content.res.Configuration.ORIENTATION_LANDSCAPE)
-                CameraBottom(vm, ui, capture, hardware, navigate, { sheet = true })
+                CameraBottom(vm, ui, capture, hardware, navigate, { navigate("preset-picker") })
         }
         AnimatedVisibility(capture.pending != null && !capture.busy) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.recover_title), Modifier.weight(1f), color = cameraForeground, style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.recover_title), Modifier.weight(1f), color = colors.onSurface, style = MaterialTheme.typography.bodySmall)
                 TextButton(onClick = vm::retrySave) { Text(stringResource(R.string.retry_save)) }
                 CameraIcon(Icons.Default.DeleteOutline, stringResource(R.string.pending_discard)) { discardPending = true }
             }
         }
         if (ui.dataError) TextButton(onClick = vm::loadData, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text(stringResource(R.string.retry)) }
-    }
-    if (sheet) ModalBottomSheet(onDismissRequest = { sheet = false }) {
-        Text(stringResource(R.string.switch_preset), Modifier.padding(24.dp), style = MaterialTheme.typography.headlineSmall)
-        androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxWidth().heightIn(max = 440.dp)) {
-            items(ui.presets.size, key = { ui.presets[it].id }) { index ->
-                val preset = ui.presets[index]
-                ListItem(
-                    headlineContent = { Text(preset.name) }, supportingContent = { Text(preset.fieldValues["project"].orEmpty(), maxLines = 2) },
-                    leadingContent = { Icon(if (preset.isPinned) Icons.Default.PushPin else Icons.Default.WorkOutline, null) },
-                    trailingContent = { if (preset.id == ui.selectedPreset?.id) Icon(Icons.Default.CheckCircle, stringResource(R.string.preset_selected_state), tint = MaterialTheme.colorScheme.primary) },
-                    modifier = Modifier.clickable { vm.select(preset); sheet = false },
-                )
-            }
-        }
-        TextButton(onClick = { sheet = false; navigate("presets") }, modifier = Modifier.padding(16.dp)) { Text(stringResource(R.string.presets)); Icon(Icons.AutoMirrored.Filled.ArrowForward, null) }
-        Spacer(Modifier.navigationBarsPadding())
     }
     if (discardPending) AlertDialog(onDismissRequest = { discardPending = false }, title = { Text(stringResource(R.string.pending_discard_title)) }, text = { Text(stringResource(R.string.pending_discard_body)) },
         confirmButton = { TextButton(onClick = { vm.discardPending(); discardPending = false }) { Text(stringResource(R.string.delete)) } },
@@ -151,6 +131,7 @@ fun CameraScreen(vm: CameraViewModel, navigate: (String) -> Unit) {
 
 @Composable
 private fun PreviewArea(vm: CameraViewModel, ui: CameraUiState, capture: CaptureState, hardware: CameraController.State, permission: Boolean, rebind: Int, modifier: Modifier, retry: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val view = remember { PreviewView(context).apply { keepScreenOn = true; scaleType = PreviewView.ScaleType.FILL_CENTER; implementationMode = PreviewView.ImplementationMode.COMPATIBLE } }
@@ -166,7 +147,7 @@ private fun PreviewArea(vm: CameraViewModel, ui: CameraUiState, capture: Capture
         val landscape = androidx.compose.ui.platform.LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
         val ratio = if (ui.settings.wideAspect) (if (landscape) 16f / 9 else 9f / 16) else (if (landscape) 4f / 3 else 3f / 4)
         val width = min(maxWidth.value, maxHeight.value * ratio).dp
-        Box(Modifier.width(width).aspectRatio(ratio).clip(RoundedCornerShape(16.dp)).onSizeChanged { size = it }.background(Color.Black)) {
+        Box(Modifier.width(width).aspectRatio(ratio).clip(RoundedCornerShape(16.dp)).onSizeChanged { size = it }.background(colors.surfaceContainerHighest)) {
             if (permission) {
                 AndroidView(factory = { view }, modifier = Modifier.fillMaxSize())
                 val currentHardware by rememberUpdatedState(hardware)
@@ -178,29 +159,36 @@ private fun PreviewArea(vm: CameraViewModel, ui: CameraUiState, capture: Capture
                     for (i in 1..2) { drawLine(Color.White.copy(alpha = .35f), Offset(this.size.width * i / 3f, 0f), Offset(this.size.width * i / 3f, this.size.height)); drawLine(Color.White.copy(alpha = .35f), Offset(0f, this.size.height * i / 3f), Offset(this.size.width, this.size.height * i / 3f)) }
                 }
                 WatermarkOverlay(vm)
-                focus?.let { p -> Canvas(Modifier.fillMaxSize()) { drawCircle(Color(0xFFF5BD4F), 27.dp.toPx(), p, style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx())) } }
-                if (!hardware.ready || hardware.error) Column(Modifier.align(Alignment.Center).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(stringResource(if (hardware.error) R.string.camera_unavailable else R.string.camera_loading), color = cameraForeground)
-                    if (hardware.error) Button(onClick = retry) { Text(stringResource(R.string.retry)) } else CircularProgressIndicator(Modifier.padding(12.dp))
+                focus?.let { p -> Canvas(Modifier.fillMaxSize()) {
+                    // Neutral backing keeps the themed focus ring visible over real photo content.
+                    drawCircle(Color.White.copy(alpha = .8f), 27.dp.toPx(), p, style = androidx.compose.ui.graphics.drawscope.Stroke(4.dp.toPx()))
+                    drawCircle(colors.primary, 27.dp.toPx(), p, style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx()))
+                } }
+                if (!hardware.ready || hardware.error) Surface(Modifier.align(Alignment.Center), color = colors.surfaceContainerHigh.copy(alpha = .95f), shape = MaterialTheme.shapes.medium) {
+                    Column(Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(stringResource(if (hardware.error) R.string.camera_unavailable else R.string.camera_loading))
+                        if (hardware.error) Button(onClick = retry) { Text(stringResource(R.string.retry)) } else CircularProgressIndicator(Modifier.padding(12.dp))
+                    }
                 }
                 if (hardware.ready) Row(Modifier.align(Alignment.TopCenter).padding(12.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     hardware.zoomStops.forEach { zoom ->
                         val text = stringResource(R.string.zoom_value, String.format(Locale.ROOT, "%.1f", zoom))
                         val zoomDescription = stringResource(R.string.zoom, zoom.toString())
+                        val selected = kotlin.math.abs(hardware.zoom - zoom) < .1f
                         TextButton(onClick = { vm.camera.zoom(zoom) }, enabled = !capture.busy,
-                            colors = ButtonDefaults.textButtonColors(containerColor = if (kotlin.math.abs(hardware.zoom - zoom) < .1f) Color(0xFF246A7A) else Color.Black.copy(alpha = .5f), contentColor = cameraForeground),
+                            colors = ButtonDefaults.textButtonColors(containerColor = if (selected) colors.primaryContainer else colors.surfaceContainerHigh.copy(alpha = .9f), contentColor = if (selected) colors.onPrimaryContainer else colors.onSurface),
                             modifier = Modifier.semantics { contentDescription = zoomDescription }) { Text(text) }
                     }
                 }
             } else Column(Modifier.align(Alignment.Center).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Default.CameraAlt, null, Modifier.size(56.dp), tint = Color(0xFF8CD2E2))
-                Text(stringResource(R.string.camera_permission_title), color = cameraForeground, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(vertical = 12.dp))
-                Text(stringResource(R.string.camera_permission_body), color = cameraForeground.copy(alpha = .7f))
+                Icon(Icons.Default.CameraAlt, null, Modifier.size(56.dp), tint = colors.primary)
+                Text(stringResource(R.string.camera_permission_title), color = colors.onSurface, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(vertical = 12.dp))
+                Text(stringResource(R.string.camera_permission_body), color = colors.onSurfaceVariant)
             }
-            if (capture.capturing || capture.saving) Surface(Modifier.align(Alignment.Center), color = Color.Black.copy(alpha = .8f), shape = MaterialTheme.shapes.medium) {
+            if (capture.capturing || capture.saving) Surface(Modifier.align(Alignment.Center), color = colors.surfaceContainerHigh.copy(alpha = .95f), shape = MaterialTheme.shapes.medium) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                    Text(stringResource(if (capture.capturing) R.string.capturing else R.string.saving), Modifier.padding(start = 12.dp), color = cameraForeground)
+                    Text(stringResource(if (capture.capturing) R.string.capturing else R.string.saving), Modifier.padding(start = 12.dp), color = colors.onSurface)
                 }
             }
         }
@@ -209,27 +197,43 @@ private fun PreviewArea(vm: CameraViewModel, ui: CameraUiState, capture: Capture
 
 @Composable
 private fun CameraBottom(vm: CameraViewModel, ui: CameraUiState, capture: CaptureState, hardware: CameraController.State, navigate: (String) -> Unit, openSheet: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
     Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = { navigate("templates") }, enabled = !capture.busy) { Text(stringResource(vm.registry.template(ui.settings.templateId).nameRes), color = cameraForeground.copy(alpha = .7f), style = MaterialTheme.typography.labelMedium) }
-            Spacer(Modifier.weight(1f))
-            CameraIcon(Icons.Default.Edit, stringResource(R.string.edit_preset), enabled = ui.selectedPreset != null && !capture.busy) { vm.beginEditor(ui.selectedPreset); navigate("editor") }
+        Surface(onClick = { navigate("templates") }, enabled = !capture.busy, color = colors.surfaceContainerHigh, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Layers, null, tint = colors.primary, modifier = Modifier.size(22.dp))
+                Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
+                    Text(stringResource(R.string.watermark_template_label), color = colors.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(vm.registry.template(ui.settings.templateId).nameRes), color = colors.onSurface, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                }
+                Text(stringResource(R.string.change_template), color = colors.primary, style = MaterialTheme.typography.labelMedium)
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = colors.primary, modifier = Modifier.padding(start = 4.dp).size(18.dp))
+            }
         }
-        Surface(onClick = openSheet, enabled = !capture.busy, color = Color(0xFF25363D), shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
-            Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.WorkOutline, null, tint = Color(0xFFF5BD4F))
-                Text(ui.selectedPreset?.name ?: stringResource(R.string.empty_preset), Modifier.weight(1f).padding(horizontal = 10.dp), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, color = cameraForeground, style = MaterialTheme.typography.titleMedium)
-                Icon(Icons.Default.ExpandMore, stringResource(R.string.switch_preset), tint = cameraForeground)
+        Surface(color = colors.surfaceContainerHigh, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f).padding(start = 4.dp, end = 8.dp)) {
+                    Text(stringResource(R.string.content_preset_label), color = colors.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                    Text(ui.selectedPreset?.name ?: stringResource(R.string.empty_preset), maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, color = colors.onSurface, style = MaterialTheme.typography.titleSmall)
+                }
+                OutlinedIconButton(onClick = { vm.beginEditor(ui.selectedPreset); navigate("editor") }, enabled = ui.selectedPreset != null && !capture.busy, modifier = Modifier.size(48.dp)) {
+                    Icon(Icons.Default.Edit, stringResource(R.string.edit_current))
+                }
+                Spacer(Modifier.width(4.dp))
+                FilledTonalIconButton(onClick = openSheet, enabled = !capture.busy, modifier = Modifier.size(48.dp)) {
+                    Icon(Icons.Default.FolderOpen, stringResource(R.string.switch_preset))
+                }
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceEvenly) {
             val last = capture.lastPhoto?.uri ?: ui.photos.firstOrNull()?.uri
             PhotoThumbnail(last, vm.photoRepository, Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).clickable(enabled = !capture.busy) { navigate("gallery") })
             val shutterDescription = stringResource(R.string.shutter)
-            Box(Modifier.size(78.dp).clip(CircleShape).border(3.dp, if (hardware.ready && !capture.busy) Color.White else Color.Gray, CircleShape)
-                .clickable(enabled = hardware.ready && !capture.busy && capture.pending == null && !ui.loading && !ui.dataError, onClick = vm::shoot)
+            val canShoot = hardware.ready && !capture.busy && capture.pending == null && !ui.loading && !ui.dataError
+            Box(Modifier.size(78.dp).clip(CircleShape).border(3.dp, if (canShoot) colors.primary else colors.onSurface.copy(alpha = .38f), CircleShape)
+                .clickable(enabled = canShoot, onClick = vm::shoot)
                 .semantics { contentDescription = shutterDescription }, contentAlignment = Alignment.Center) {
-                Box(Modifier.size(62.dp).background(if (capture.busy) Color.Gray else Color.White, CircleShape))
+                Box(Modifier.size(62.dp).background(if (canShoot) colors.primary else colors.onSurface.copy(alpha = .38f), CircleShape))
             }
             CameraIcon(Icons.Default.Cameraswitch, stringResource(R.string.switch_camera), hardware.canSwitch && !capture.busy) { vm.bool("front", !hardware.front) }
         }
@@ -237,18 +241,20 @@ private fun CameraBottom(vm: CameraViewModel, ui: CameraUiState, capture: Captur
 }
 @Composable
 private fun CameraIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, description: String, enabled: Boolean = true, action: () -> Unit) {
-    IconButton(onClick = action, enabled = enabled) { Icon(icon, description, tint = if (enabled) cameraForeground else cameraForeground.copy(alpha = .3f)) }
+    IconButton(onClick = action, enabled = enabled) { Icon(icon, description) }
 }
 @Composable
 fun PhotoThumbnail(uri: String?, repository: PhotoRepository, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
     val bitmap by produceState<android.graphics.Bitmap?>(null, uri) { value = uri?.let { repository.thumbnail(it) } }
-    Box(modifier.background(Color(0xFF25363D)), contentAlignment = Alignment.Center) {
+    Box(modifier.background(colors.surfaceContainerHigh), contentAlignment = Alignment.Center) {
         if (bitmap != null) Image(requireNotNull(bitmap).asImageBitmap(), stringResource(R.string.gallery), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-        else Icon(Icons.Default.PhotoLibrary, stringResource(R.string.gallery), tint = Color.LightGray)
+        else Icon(Icons.Default.PhotoLibrary, stringResource(R.string.gallery), tint = colors.onSurfaceVariant)
     }
 }
 @Composable
 private fun LocationLine(location: LocationSnapshot, enabled: Boolean, request: () -> Unit, refresh: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
     val cachedTime = location.measuredAt?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MM-dd HH:mm")) }.orEmpty()
     val text = when (location.status) {
         LocationStatus.DISABLED -> stringResource(R.string.location_disabled)
@@ -262,9 +268,9 @@ private fun LocationLine(location: LocationSnapshot, enabled: Boolean, request: 
         LocationStatus.GEOCODING_FAILED -> stringResource(R.string.location_geocode_failed)
     }
     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.Default.LocationOn, null, Modifier.size(14.dp), tint = Color(0xFF8CD2E2))
-        Text(text, Modifier.weight(1f).padding(start = 6.dp), color = cameraForeground.copy(alpha = .65f), style = MaterialTheme.typography.labelSmall, maxLines = 2)
-        IconButton(onClick = if (!enabled || location.status == LocationStatus.PERMISSION_REQUIRED) request else refresh) { Icon(if (!enabled) Icons.Default.AddLocationAlt else Icons.Default.Refresh, stringResource(R.string.location_refresh), Modifier.size(20.dp), tint = cameraForeground) }
+        Icon(Icons.Default.LocationOn, null, Modifier.size(14.dp), tint = colors.primary)
+        Text(text, Modifier.weight(1f).padding(start = 6.dp), color = colors.onSurfaceVariant, style = MaterialTheme.typography.labelSmall, maxLines = 2)
+        IconButton(onClick = if (!enabled || location.status == LocationStatus.PERMISSION_REQUIRED) request else refresh) { Icon(if (!enabled) Icons.Default.AddLocationAlt else Icons.Default.Refresh, stringResource(R.string.location_refresh), Modifier.size(20.dp), tint = colors.onSurface) }
     }
 }
 

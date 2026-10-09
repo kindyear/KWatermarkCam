@@ -66,6 +66,7 @@ class PhotoRepository internal constructor(
                 spec.getDouble("width").toFloat(), spec.getDouble("maxWidth").toFloat(),
                 spec.getDouble("margin").toFloat(), spec.getDouble("padding").toFloat(),
                 spec.getDouble("font").toFloat(), spec.getDouble("maxHeight").toFloat(), spec.getInt("maxLines"),
+                WatermarkStyle.valueOf(spec.optString("style", WatermarkStyle.CONSTRUCTION.name)),
             ) } ?: WatermarkLayoutSpec()
             val snapshot = WatermarkSnapshot(doc.getString("template"), doc.getString("preset"), doc.getString("title"),
                 (0 until rows.length()).map { index -> rows.getJSONObject(index).let { WatermarkRow(it.getString("label"), it.getString("value")) } },
@@ -175,6 +176,7 @@ class PhotoRepository internal constructor(
                 put("width", s.layout.widthFraction); put("maxWidth", s.layout.maxWidthOn1080)
                 put("margin", s.layout.marginOn1080); put("padding", s.layout.paddingOn1080)
                 put("font", s.layout.fontOn1080); put("maxHeight", s.layout.maxHeightFraction); put("maxLines", s.layout.maxLines)
+                put("style", s.layout.style.name)
             })
             put("version", 1); put("template", s.templateId); put("preset", s.presetId); put("title", s.title)
             put("time", s.timestamp); put("visible", s.visible); put("uri", uri ?: "")

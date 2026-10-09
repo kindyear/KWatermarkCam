@@ -22,6 +22,7 @@ data class CameraUiState(
     val settings: AppSettings = AppSettings(), val presets: List<WatermarkPreset> = emptyList(),
     val selectedPreset: WatermarkPreset? = null, val photos: List<PhotoRecord> = emptyList(),
     val loading: Boolean = true, val dataError: Boolean = false,
+    val folders: List<PresetFolder> = emptyList(),
 )
 data class CaptureState(val capturing: Boolean = false, val saving: Boolean = false, val pending: PendingPhoto? = null, val recovering: Boolean = true, val lastPhoto: PhotoRecord? = null) {
     val busy get() = capturing || saving || recovering
@@ -30,7 +31,7 @@ data class EditorUiState(
     val id: String? = null, val templateId: String = "construction-default", val name: String = "",
     val values: Map<String, String> = emptyMap(), val hidden: Set<String> = emptySet(),
     val saving: Boolean = false, val originalName: String = "", val originalValues: Map<String, String> = values,
-    val originalHidden: Set<String> = hidden,
+    val originalHidden: Set<String> = hidden, val folderId: String? = null,
 ) {
     val dirty get() = name != originalName || values != originalValues || hidden != originalHidden
 }
@@ -70,11 +71,11 @@ class CameraViewModel @Inject constructor(
         dataJob = viewModelScope.launch {
             try {
                 presets.ensureDefaults()
-                combine(settings.settings, presets.presets, photoRepository.photos) { config, all, photos ->
+                combine(settings.settings, presets.presets, photoRepository.photos, presets.folders) { config, all, photos, folders ->
                     val template = registry.template(config.templateId)
                     val available = all.filter { it.templateId == template.id }
-                    val selected = available.firstOrNull { it.id == config.presetId } ?: available.firstOrNull()
-                    CameraUiState(config, available, selected, photos, loading = false)
+                    val selected = all.firstOrNull { it.id == config.presetId } ?: available.firstOrNull() ?: all.firstOrNull()
+                    CameraUiState(config, all, selected, photos, loading = false, folders = folders)
                 }.collect { value ->
                     val locationChanged = mutableUi.value.settings.location != value.settings.location
                     mutableUi.value = value
@@ -107,15 +108,24 @@ class CameraViewModel @Inject constructor(
     fun bool(key: String, value: Boolean) = operation { settings.boolean(key, value) }
     fun text(key: String, value: String) = operation { settings.text(key, value) }
     fun select(preset: WatermarkPreset) = operation { settings.select(preset.templateId, preset.id) }
-    fun template(id: String) = operation { settings.text("template", id) }
+    fun template(id: String) = operation { settings.select(id, presets.ensureTemplate(id)) }
     fun pin(preset: WatermarkPreset) = operation { presets.pin(preset.id, !preset.isPinned) }
     fun duplicate(preset: WatermarkPreset) = operation { presets.duplicate(preset.id) }
     fun rename(id: String, value: String) = operation { presets.rename(id, value) }
-    fun delete(preset: WatermarkPreset) = operation {
-        val replacement = presets.delete(preset.id)
-        if (mutableUi.value.selectedPreset?.id == preset.id) settings.select(preset.templateId, replacement)
+    // The subscription repairs selection from the committed library snapshot. Reading
+    // selectedPreset after deletion races Room's Flow and can miss the deleted selection.
+    fun delete(preset: WatermarkPreset) = operation { presets.delete(preset.id) }
+    fun reorderFolder(folderId: String?, ids: List<String>) = operation { presets.reorderFolder(folderId, ids) }
+    fun createFolder(name: String, parentId: String?) = folderOperation { presets.createFolder(name, parentId) }
+    fun renameFolder(id: String, name: String) = folderOperation { presets.renameFolder(id, name) }
+    fun deleteFolder(id: String) = operation { presets.deleteFolder(id) }
+    fun movePreset(id: String, folderId: String?) = operation { presets.move(id, folderId) }
+    private fun folderOperation(block: suspend () -> Unit) {
+        operation { try { block() } catch (e: IllegalArgumentException) {
+            Log.w("CameraViewModel", "Invalid folder operation", e)
+            eventChannel.send(UiEvent.Message(R.string.folder_invalid))
+        } }
     }
-    fun reorder(ids: List<String>) = operation { presets.reorder(mutableUi.value.settings.templateId, ids) }
     private fun operation(block: suspend () -> Unit) {
         viewModelScope.launch {
             try { block() }
@@ -123,12 +133,12 @@ class CameraViewModel @Inject constructor(
             catch (e: Exception) { Log.e("CameraViewModel", "Operation failed", e); eventChannel.send(UiEvent.Message(R.string.data_failed)) }
         }
     }
-    fun beginEditor(preset: WatermarkPreset?) {
-        val templateId = preset?.templateId ?: mutableUi.value.settings.templateId
+    fun beginEditor(preset: WatermarkPreset?, folderId: String? = null, newTemplateId: String? = null) {
+        val templateId = preset?.templateId ?: newTemplateId ?: mutableUi.value.settings.templateId
         val values = preset?.fieldValues?.toMap() ?: registry.defaults(templateId)
         val name = preset?.name.orEmpty()
         val hidden = preset?.hiddenFields?.toSet() ?: emptySet()
-        mutableEditor.value = EditorUiState(preset?.id, templateId, name, values, hidden, originalName = name, originalValues = values, originalHidden = hidden)
+        mutableEditor.value = EditorUiState(preset?.id, templateId, name, values, hidden, originalName = name, originalValues = values, originalHidden = hidden, folderId = preset?.folderId ?: folderId)
     }
     fun editorName(value: String) { mutableEditor.update { it.copy(name = value.take(80)) } }
     fun editorField(id: String, value: String) { mutableEditor.update { it.copy(values = it.values + (id to value.take(500))) } }
@@ -140,7 +150,7 @@ class CameraViewModel @Inject constructor(
         mutableEditor.update { it.copy(saving = true) }
         viewModelScope.launch {
             try {
-                val id = presets.saveDraft(draft.id, draft.templateId, draft.name, draft.values, draft.hidden)
+                val id = presets.saveDraft(draft.id, draft.templateId, draft.name, draft.values, draft.hidden, draft.folderId)
                 settings.select(draft.templateId, id)
                 mutableEditor.update { it.copy(id = id, saving = false, originalName = draft.name, originalValues = draft.values, originalHidden = draft.hidden) }
                 eventChannel.send(UiEvent.EditorSaved)

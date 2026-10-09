@@ -76,13 +76,15 @@ def package_release(tag):
     assets = sorted(destination.iterdir())
     (destination / 'SHA256SUMS').write_text(''.join(f'{sha256(path)}  {path.name}\n' for path in assets))
     maturity = '此版本为预发布。' if version.startswith('0.') or '-' in version else '此版本为正式发行。'
+    notes_path = ROOT / 'docs/releases' / f'{version}.md'
+    changes = notes_path.read_text() if notes_path.is_file() else '功能包括 CameraX 拍摄、水印实时预览与高清合成、多预设管理、时间与定位、系统相册保存、Material 3 主题。业务数据保存在本机。'
     (ROOT / 'release-assets-notes.md').write_text(f'''Android 原生工程水印相机 **{version}**（versionCode {code}），最低支持 Android 10。
 
 下载 `.apk` 安装；`.aab` 用于应用商店分发，不能直接安装。签名证书信息和 SHA-256 校验文件随附件提供。后续正式发行使用相同发布密钥，可保留数据直接升级。
 
-功能包括 CameraX 拍摄、工程水印实时预览与高清合成、多预设管理、时间与定位、系统相册保存、Material 3 主题。业务数据保存在本机。
+{changes}
 
-{maturity}实际真机验证记录覆盖 Android 14 小米 MI 6，其他系统和设备的相机兼容性仍需验证。自动流水线执行单元测试、Android 测试 APK 编译、Lint 和签名验证；不使用模拟器。
+{maturity}具体真机验证范围与未验证场景见 docs/TESTING.md。自动流水线执行单元测试、Android 测试 APK 编译、Lint 和签名验证；不使用模拟器。
 
 首次从开发版 Debug APK 切换到发行 APK 时，Android 会因签名不同拒绝覆盖安装。请先保存需要的预设信息，再自行卸载开发版；卸载会清除应用私有数据。相册照片由系统管理。
 

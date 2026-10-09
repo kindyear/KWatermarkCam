@@ -1,0 +1,14 @@
+Create folder, nested folder, preset: passed
+Rename, copy: passed
+Pin/unpin: passed
+Move up/down: passed
+Delete cancellation: passed
+Editor save: passed
+Move preset into nested folder: passed
+Folder rename and safe deletion rehomes content: passed
+Long-press drag reorder and persisted order: passed
+Preset deletion and empty folder deletion: passed
+Quick preset switching also switches template: passed
+Selected preset persists after process restart: passed
+Deleting selected last template preset falls back across templates: passed
+Deleted template preset does not reappear after restart: passed

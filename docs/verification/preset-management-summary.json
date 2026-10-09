@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-09",
+  "device": {
+    "name": "Redmi K40",
+    "android": "13",
+    "api": 33
+  },
+  "fixes": [
+    "Only an empty global library gets a replacement default",
+    "Selection repair can fall back across templates without racing deletion",
+    "Committed library changes cancel stale drag state and refresh displayed items"
+  ],
+  "unitTests": {
+    "passed": 10,
+    "failed": 0
+  },
+  "deviceTests": {
+    "passed": 24,
+    "failed": 0,
+    "seconds": 3.942,
+    "scope": "PresetDeletionTest, PresetDatabaseTest, PresetFolderTest, TemplateStylesTest, PhotoPipelineTest"
+  },
+  "cameraLifecycleRerun": "Incomplete: runner timed out during camera test startup; not passed",
+  "lintErrors": 0,
+  "builds": {
+    "debug": "passed",
+    "release": "passed (unsigned)"
+  },
+  "manualUiResults": "preset-management-ui.txt",
+  "temporaryTestData": "QA folders and presets removed; original preset retained",
+  "screenOffTimeoutRestoredMs": 60000,
+  "artifacts": {
+    "debug": {
+      "path": "app/build/outputs/apk/debug/app-debug.apk",
+      "bytes": 79660022,
+      "sha256": "1236b6da51cac0ac69b2146cfebba35892fe845a024d3ec9d803bf36ca9afe51"
+    },
+    "releaseUnsigned": {
+      "path": "app/build/outputs/apk/release/app-release-unsigned.apk",
+      "bytes": 4859340,
+      "sha256": "8dba29bf6c9ecf58192f5c0b267fd4e27848b0609965f860d3eb56c1fc315e00"
+    }
+  }
+}

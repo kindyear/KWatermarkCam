@@ -20,7 +20,6 @@ import cn.kindyear.kwatermarkcam.feature.camera.CameraViewModel
 fun SettingsScreen(vm: CameraViewModel, back: () -> Unit, navigate: (String) -> Unit) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val settings = ui.settings
-    var licenses by remember { mutableStateOf(false) }
     PageScaffold(stringResource(R.string.settings), back) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
             SectionTitle(stringResource(R.string.appearance))
@@ -46,11 +45,10 @@ fun SettingsScreen(vm: CameraViewModel, back: () -> Unit, navigate: (String) -> 
             Text(stringResource(R.string.storage_description), Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
             ListItem(headlineContent = { Text(stringResource(R.string.gallery)) }, modifier = Modifier.clickable { navigate("gallery") })
             SectionTitle(stringResource(R.string.about))
-            ListItem(headlineContent = { Text(stringResource(R.string.app_name)) }, supportingContent = { Text(stringResource(R.string.version, BuildConfig.VERSION_NAME)) })
-            ListItem(headlineContent = { Text(stringResource(R.string.licenses)) }, modifier = Modifier.clickable { licenses = true })
+            ListItem(headlineContent = { Text(stringResource(R.string.app_name)) }, supportingContent = { Text(stringResource(R.string.version, BuildConfig.VERSION_NAME)) }, modifier = Modifier.clickable { navigate("about") })
         }
     }
-    if (licenses) AlertDialog(onDismissRequest = { licenses = false }, title = { Text(stringResource(R.string.licenses)) }, text = { Text(stringResource(R.string.licenses_body)) }, confirmButton = { TextButton(onClick = { licenses = false }) { Text(stringResource(R.string.confirm)) } })
+
 }
 @Composable private fun SectionTitle(title: String) {
     HorizontalDivider(Modifier.padding(top = 12.dp))
