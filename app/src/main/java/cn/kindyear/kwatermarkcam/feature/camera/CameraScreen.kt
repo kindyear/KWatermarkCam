@@ -95,12 +95,12 @@ fun CameraScreen(vm: CameraViewModel, navigate: (String) -> Unit) {
             if (landscape) Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                 PreviewArea(vm, ui, capture, hardware, permission, rebind, Modifier.weight(1f).fillMaxHeight()) { rebind++ }
                 Column(Modifier.width(236.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(8.dp)) {
-                    LocationLine(position, ui.settings.location, ::requestLocation, vm::refreshLocation)
+                    LocationLine(position, ui.settings.location, ui.settings.locationDisplay, ::requestLocation, vm::refreshLocation)
                     CameraBottom(vm, ui, capture, hardware, navigate, { navigate("preset-picker") })
                 }
             } else Column(Modifier.fillMaxSize()) {
                 PreviewArea(vm, ui, capture, hardware, permission, rebind, Modifier.weight(1f).fillMaxWidth()) { rebind++ }
-                LocationLine(position, ui.settings.location, ::requestLocation, vm::refreshLocation)
+                LocationLine(position, ui.settings.location, ui.settings.locationDisplay, ::requestLocation, vm::refreshLocation)
             }
         }
         if (!permission) {
@@ -136,10 +136,12 @@ private fun PreviewArea(vm: CameraViewModel, ui: CameraUiState, capture: Capture
     val owner = LocalLifecycleOwner.current
     val view = remember { PreviewView(context).apply { keepScreenOn = true; scaleType = PreviewView.ScaleType.FILL_CENTER; implementationMode = PreviewView.ImplementationMode.COMPATIBLE } }
     var size by remember { mutableStateOf(IntSize.Zero) }
+    val lensSelection by vm.camera.requestedLens.collectAsStateWithLifecycle()
+    var lensPicker by remember { mutableStateOf(false) }
     var focus by remember { mutableStateOf<Offset?>(null) }
     LaunchedEffect(focus) { if (focus != null) { delay(900); focus = null } }
-    DisposableEffect(owner, size, ui.settings.frontCamera, permission, rebind) {
-        if (permission && size.width > 0 && size.height > 0) vm.camera.bind(owner, view, ui.settings.frontCamera, ui.settings.flash)
+    DisposableEffect(owner, size, ui.settings.frontCamera, permission, rebind, lensSelection) {
+        if (permission && size.width > 0 && size.height > 0) vm.camera.bind(owner, view, ui.settings.frontCamera, ui.settings.flash, lensSelection)
         onDispose { vm.camera.unbind() }
     }
     LaunchedEffect(ui.settings.flash, hardware.hasFlash) { vm.camera.setFlash(ui.settings.flash) }
@@ -171,6 +173,9 @@ private fun PreviewArea(vm: CameraViewModel, ui: CameraUiState, capture: Capture
                     }
                 }
                 if (hardware.ready) Row(Modifier.align(Alignment.TopCenter).padding(12.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (hardware.lenses.count { it.front == hardware.front } > 1) IconButton(onClick = { lensPicker = true }, enabled = !capture.busy) {
+                        Icon(Icons.Default.Cameraswitch, stringResource(R.string.camera_lenses), tint = colors.primary, modifier = Modifier.size(22.dp))
+                    }
                     hardware.zoomStops.forEach { zoom ->
                         val text = stringResource(R.string.zoom_value, String.format(Locale.ROOT, "%.1f", zoom))
                         val zoomDescription = stringResource(R.string.zoom, zoom.toString())
@@ -193,6 +198,8 @@ private fun PreviewArea(vm: CameraViewModel, ui: CameraUiState, capture: Capture
             }
         }
     }
+    if (lensPicker) CameraLensSheet(hardware, { lensPicker = false }) { id -> vm.camera.selectLens(id); lensPicker = false }
+
 }
 
 @Composable
@@ -253,7 +260,7 @@ fun PhotoThumbnail(uri: String?, repository: PhotoRepository, modifier: Modifier
     }
 }
 @Composable
-private fun LocationLine(location: LocationSnapshot, enabled: Boolean, request: () -> Unit, refresh: () -> Unit) {
+private fun LocationLine(location: LocationSnapshot, enabled: Boolean, display: LocationDisplay, request: () -> Unit, refresh: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val cachedTime = location.measuredAt?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MM-dd HH:mm")) }.orEmpty()
     val text = when (location.status) {
@@ -269,7 +276,9 @@ private fun LocationLine(location: LocationSnapshot, enabled: Boolean, request: 
     }
     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Default.LocationOn, null, Modifier.size(14.dp), tint = colors.primary)
-        Text(text, Modifier.weight(1f).padding(start = 6.dp), color = colors.onSurfaceVariant, style = MaterialTheme.typography.labelSmall, maxLines = 2)
+        val value = if (display == LocationDisplay.COORDINATES) location.coordinates() else location.address?.takeIf { it.isNotBlank() } ?: location.coordinates()
+        val label = if (enabled && value != null) "$text · $value" else text
+        Text(label, Modifier.weight(1f).padding(start = 6.dp), color = colors.onSurfaceVariant, style = MaterialTheme.typography.labelSmall, maxLines = 2)
         IconButton(onClick = if (!enabled || location.status == LocationStatus.PERMISSION_REQUIRED) request else refresh) { Icon(if (!enabled) Icons.Default.AddLocationAlt else Icons.Default.Refresh, stringResource(R.string.location_refresh), Modifier.size(20.dp), tint = colors.onSurface) }
     }
 }
@@ -280,5 +289,25 @@ private fun WatermarkOverlay(vm: CameraViewModel) {
     val snapshot by vm.watermark.collectAsStateWithLifecycle()
     Canvas(Modifier.fillMaxSize()) {
         snapshot?.let { frozen -> drawIntoCanvas { vm.renderer.draw(it.nativeCanvas, size.width.toInt(), size.height.toInt(), frozen) } }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CameraLensSheet(hardware: CameraController.State, dismiss: () -> Unit, select: (String) -> Unit) {
+    ModalBottomSheet(onDismissRequest = dismiss) {
+        Text(stringResource(R.string.camera_lenses), Modifier.padding(horizontal = 24.dp, vertical = 12.dp), style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(R.string.camera_lenses_hint), Modifier.padding(horizontal = 24.dp, vertical = 8.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxWidth().heightIn(max = 360.dp)) {
+            items(hardware.lenses.filter { it.front == hardware.front }.size) { index ->
+                val lens = hardware.lenses.filter { it.front == hardware.front }[index]
+                val unavailable = lens.id in hardware.unavailableLensIds
+                ListItem(headlineContent = { Text(stringResource(if (lens.front) R.string.camera_lens_front else if (lens.isDefault) R.string.camera_lens_main else R.string.camera_lens_other)) },
+                    supportingContent = { Text(if (unavailable) stringResource(R.string.camera_lens_unavailable) else stringResource(R.string.camera_lens_view, String.format(Locale.ROOT, "%.1f", lens.intrinsicZoom))) },
+                    leadingContent = { Icon(Icons.Default.CameraAlt, null) }, trailingContent = { RadioButton(lens.id == hardware.activeLensId, null, enabled = !unavailable) },
+                    modifier = Modifier.clickable(enabled = !unavailable) { select(lens.id) })
+            }
+        }
+        Spacer(Modifier.navigationBarsPadding())
     }
 }

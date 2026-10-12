@@ -18,8 +18,11 @@ class TemplateRegistry @Inject constructor(@param:ApplicationContext private val
     val templates = listOf(
         WatermarkTemplate("construction-default", R.string.template_construction, listOf(
             time(), text("project", R.string.field_project, 1, context.getString(R.string.default_project)),
-            text("company", R.string.field_company, 2, context.getString(R.string.default_company)), address(3),
-            text("photographer", R.string.field_photographer, 4), text("note", R.string.field_note, 5, context.getString(R.string.default_note)),
+            text("company", R.string.field_company, 2, context.getString(R.string.default_company)),
+            text("supervision_company", R.string.field_supervision_company, 3),
+            text("design_company", R.string.field_design_company, 4),
+            text("construction_company", R.string.field_construction_company, 5), address(6),
+            text("photographer", R.string.field_photographer, 7), text("note", R.string.field_note, 8, context.getString(R.string.default_note)),
         ), descriptionRes = R.string.description_construction),
         WatermarkTemplate("attendance-clock", R.string.template_attendance, listOf(
             time(), text("photographer", R.string.field_employee, 1), text("team", R.string.field_team, 2), address(3), text("note", R.string.field_note, 4),
@@ -46,7 +49,8 @@ class TemplateRegistry @Inject constructor(@param:ApplicationContext private val
                     val measured = Instant.ofEpochMilli(context.location.measuredAt).atZone(context.zone).format(DateTimeFormatter.ofPattern("MM-dd HH:mm"))
                     value = this.context.getString(R.string.watermark_cached_location, value, measured)
                 }
-                WatermarkRow(this.context.getString(field.labelRes), value)
-            }.filter { it.value.isNotBlank() }, visible, context.timestamp, template.layout)
+                val coordinateLabel = field.type == FieldType.COORDINATES || field.type == FieldType.ADDRESS && preset.fieldValues[field.id].isNullOrBlank() && context.locationDisplay == LocationDisplay.COORDINATES
+                WatermarkRow(this.context.getString(if (coordinateLabel) R.string.location_coordinates else field.labelRes), value)
+            }.filter { it.value.isNotBlank() } + preset.customFields.filter { it.visible && it.value.isNotBlank() }.map { WatermarkRow(it.name, it.value) }, visible, context.timestamp, template.layout)
     }
 }

@@ -24,7 +24,7 @@ Compose 页面发送意图给 `CameraViewModel`。ViewModel 组合 Room 和 Data
 
 相机控制器封装 CameraX 的 Preview、ImageCapture、CameraSelector、CameraInfo 和 CameraControl。UI 的 AndroidView 只提供 PreviewView，控制器根据 LifecycleOwner、预览尺寸、比例和镜头绑定。DisposableEffect 只在这些输入改变时执行，水印秒更新、预设切换、闪光灯更新不会重复绑定。
 
-Preview 和 ImageCapture 放入共享 UseCaseGroup/ViewPort，以预览实际矩形裁剪输出。比例框在竖屏使用 3:4 / 9:16，在横屏使用 4:3 / 16:9。触控对焦使用 PreviewView 的 MeteringPointFactory；缩放倍率过滤当前 min/maxZoomRatio。多物理镜头由 CameraX 标准逻辑相机能力决定，未直接调用厂商私有接口。闪光灯使用 ImageCapture flashMode，不启用 Torch。
+Preview 和 ImageCapture 放入共享 UseCaseGroup/ViewPort，以预览实际矩形裁剪输出。比例框在竖屏使用 3:4 / 9:16，在横屏使用 4:3 / 16:9。触控对焦使用 PreviewView 的 MeteringPointFactory；缩放倍率过滤当前 min/maxZoomRatio。CameraCatalog 缓存 ProcessCameraProvider.availableCameraInfos，通过 CameraInfo.cameraSelector 选择公开镜头，以默认选择器识别主镜头。Camera2CameraInfo 只读相机 ID；physicalCameraInfos 仅用于诊断，不强行打开。intrinsicZoomRatio 用于近似相对主镜头倍率，实际缩放仍受 zoomState 限制。优先镜头/尺寸绑定失败时退回默认镜头和保守尺寸；仅不支持配置类错误临时禁用辅助镜头，瞬时错误允许重试。未调用厂商私有接口。闪光灯使用 ImageCapture flashMode，不启用 Torch。
 
 前置预览与输出采用镜像一致策略，通过 ImageCapture.Metadata.isReversedHorizontal 记录，随后 ImageDecoder 统一规范化所有 EXIF 方向。设备方向变化更新拍摄旋转，Activity 配置重建后重新绑定正确尺寸。相机后台由 CameraX 生命周期关闭；方向传感器只在 RESUMED 状态开启，定位与秒级时钟暂停，ON_STOP 清除就绪标记，ON_START 重新确认相机状态。解绑时移除 CameraState/ZoomState 观察器和传感器监听。
 
@@ -40,7 +40,7 @@ ImageCapture 的候选尺寸按可用堆的预算限制，优先使用设备支�
 
 ## 水印引擎
 
-`TemplateRegistry` 格式化稳定字段 ID，生成不可变 `WatermarkSnapshot`。预览与最终 JPEG 均调用 `WatermarkRenderer`，使用照片短边归一化字体、内边距、背景和左下角坐标。StaticLayout 支持中文测量、换行和行尾省略，最多显示配置的行数，内容过高时缩小字体。输入字段最多 500 字符。
+`TemplateRegistry` 格式化稳定字段 ID，生成不可变 `WatermarkSnapshot`。预览与最终 JPEG 均调用 `WatermarkRenderer`，使用照片短边归一化字体、内边距、背景和左下角坐标。StaticLayout 支持中文测量、换行和行尾省略，最多显示配置的行数，内容过高时缩小字体。输入字段最多 500 字符。每套预设最多 12 个额外文本字段，附加到模板默认字段之后；隐藏状态与顺序在拍照快照中冻结。密集字段缩小字体后采用单行省略，保持整块水印在照片范围内。
 
 实时预览直接在 Compose Canvas 的 nativeCanvas 上绘制，没有拍摄 UI 截图。JPEG 输出由 ImageDecoder 解码成可变软件 Bitmap，在同一 Bitmap 上直接绘制，不创建另一张全图合成层；合成、JPEG 压缩、EXIF 与媒体写入都在 IO dispatcher。解码前检查像素和剩余堆预算，OOM 转成可恢复状态，保留原图而非静默缩图。
 
@@ -61,6 +61,8 @@ ImageCapture 的候选尺寸按可用堆的预算限制，优先使用设备支�
 
 位置服务封装独立 Flow，订阅时先检查授权和系统开关，读取有测量时间的缓存、Fused 最近位置，再请求低频更新。小于两分钟且精度不超过 150 米才标记为新位置；其他有效位置标记缓存，最多沿用 24 小时；自动地点水印也注明缓存测量时间，手填地址不追加该标记。地址解析失败保留经纬度，20 秒无新位置有超时状态。离开拍摄页或切后台取消订阅并移除更新。
 
+LocationDisplay 在 DataStore 中保存附近名称或经纬度；坐标模式跳过地址解析，切换模式会重启前台订阅。附近名称取系统 Geocoder 的街道/片区或地名，无法得到名称时回退坐标，不是 POI 检索。手填地点始终优先。
+
 `GeocodingRepository` 是提供商扩展接口，目前由 SystemGeocodingRepository 实现；Android 13+ 使用异步接口，Android 10–12 的兼容调用在 IO 上执行。无 Google Play services 时使用系统定位提供商：粗略授权仅请求网络定位，精确授权才请求 GPS，注册失败时也取消此前的监听。冻结快门快照使后续异步位置更新无法修改已拍照片。
 
 EXIF 仅复制明确允许的曝光和基本拍摄信息，不写入 GPS；水印显示的地点由用户决定。没有后台定位、全相册读取、网络后台、账号或云服务。
@@ -69,7 +71,9 @@ EXIF 仅复制明确允许的曝光和基本拍摄信息，不写入 GPS；水�
 
 - 目前单 module 和一个 ViewModel 协调相关业务页面，关于页不依赖该 ViewModel，编辑草稿独立于 Room 实体。规模扩大后可以按页面拆 ViewModel，不需要拆数据库或相机引擎。
 - Room schema 1、2 已导出，v1→v2 已有显式 Migration；任何后续升级需保留历史 schema 并执行迁移测试。
-- 预设字段 JSON schemaVersion=1，未来字段或布局策略以稳定 ID 演进；未知格式报错，不能使用 destructive migration。
+- 预设字段 JSON 无扩展项仍写 schemaVersion=1，有自定义字段写 version=2；读端支持两者，未知版本报错。Room 数据库仍为 v2，不需要表结构迁移。自定义字段保存稳定 custom: UUID、名称、内容、可见性和数组顺序；旧调用省略扩展字段时保留原内容，不能使用 destructive migration。
 - 拍摄日志保存样式枚举与归一化参数，旧日志缺省样式为工程样式；未知样式报错并保留原始结果。拍摄日志与照片记录保留模板/预设 ID，删除预设不删除已生成照片；历史水印像素已冻结，不依赖预设仍存在。
 
 删除预设只在整个文件库为空时补建一套默认工程；某模板为空是正常状态，启动不补回已删除模板的预设。主动再次选择该模板时才按需创建。当前选择由同一个 Flow 订阅从提交后的列表修复，避免删除协程读取已变化的 UI 状态导致选择修复遗漏。
+
+相机探测参考官方 [CameraX 配置](https://developer.android.com/media/camera/camerax/configuration)、[CameraInfo](https://developer.android.com/reference/androidx/camera/core/CameraInfo) 与 [Android camera-samples](https://github.com/android/camera-samples)。辅助镜头倍率来自公开的 intrinsicZoomRatio，表示视场的近似相对值，不能视为厂商确认的物理焦段。

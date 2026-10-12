@@ -2,6 +2,7 @@ package cn.kindyear.kwatermarkcam.domain.repository
 
 import cn.kindyear.kwatermarkcam.domain.model.WatermarkPreset
 import cn.kindyear.kwatermarkcam.domain.model.PresetFolder
+import cn.kindyear.kwatermarkcam.domain.model.CustomWatermarkField
 import kotlinx.coroutines.flow.Flow
 
 /** UI consumes this interface; all persistence invariants live in the implementation. */
@@ -11,7 +12,7 @@ interface PresetRepository {
     /** Creates a preset lazily when a template is first used. */
     suspend fun ensureTemplate(templateId: String): String
     suspend fun ensureDefaults()
-    suspend fun saveDraft(id: String?, templateId: String, name: String, values: Map<String, String>, hidden: Set<String>, folderId: String? = null): String
+    suspend fun saveDraft(id: String?, templateId: String, name: String, values: Map<String, String>, hidden: Set<String>, folderId: String? = null, customFields: List<CustomWatermarkField>? = null): String
     suspend fun rename(id: String, name: String)
     suspend fun duplicate(id: String): String
     /** Deletes the item and returns a surviving ID; only an empty library gets a default. */

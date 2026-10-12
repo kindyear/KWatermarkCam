@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-12",
+  "device": {
+    "model": "Redmi K40 / M2012K11AC",
+    "android": 13,
+    "api": 33
+  },
+  "builds": {
+    "assembleDebug": "passed",
+    "testDebugUnitTest": {
+      "passed": 11,
+      "failed": 0
+    },
+    "assembleDebugAndroidTest": "passed",
+    "lintDebug": {
+      "errors": 0,
+      "warnings": 31
+    },
+    "assembleRelease": "passed, unsigned"
+  },
+  "device_tests": {
+    "passed": 28,
+    "failed": 0,
+    "duration_seconds": 5.151,
+    "camera_activity_scenario": "startup blocked; not passed",
+    "manual_captured_photo_verification": {
+      "passed": 1,
+      "sizes": [
+        [
+          1940,
+          2586
+        ],
+        [
+          1440,
+          1920
+        ]
+      ]
+    }
+  },
+  "installation": {
+    "tested_package": "cn.kindyear.kwatermarkcam.debug",
+    "official_app": "not uninstalled or replaced"
+  },
+  "public_cameras": [
+    {
+      "id": "0",
+      "facing": "back",
+      "flash": true,
+      "intrinsic": 1
+    },
+    {
+      "id": "1",
+      "facing": "front",
+      "flash": false,
+      "intrinsic": 1
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "app/build/outputs/apk/debug/app-debug.apk",
+      "sha256": "5b3d228177d7482e73ef95fca1338193902e48729dd75372af5f46a6e428c7c2"
+    },
+    {
+      "path": "app/build/outputs/apk/release/app-release-unsigned.apk",
+      "sha256": "cd8f46e5111497f193a0ec1eb33e3fda6d2e7010caf3a03bdcbcaef731ecf4d1"
+    }
+  ]
+}

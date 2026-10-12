@@ -20,6 +20,7 @@ android {
         targetSdk = 37
         versionCode = providers.gradleProperty("app.versionCode").get().toInt()
         versionName = providers.gradleProperty("app.versionName").get()
+        manifestPlaceholders["appLabel"] = "@string/app_name"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
@@ -34,6 +35,13 @@ android {
         }
     }
     buildTypes {
+        debug {
+            if (providers.gradleProperty("debug.separateApp").orNull == "true") {
+                applicationIdSuffix = ".debug"
+                versionNameSuffix = "-dev"
+                manifestPlaceholders["appLabel"] = "@string/debug_app_name"
+            }
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

@@ -50,11 +50,11 @@ class WatermarkRenderer @Inject constructor() {
                 val hero = index == 0 && spec.style != WatermarkStyle.CONSTRUCTION
                 val text = if (hero) row.value else "${row.label}  ${row.value}"
                 val display = if (hero && spec.style == WatermarkStyle.ATTENDANCE) text.replaceFirst(" ", "\n") else text
-                add(display, font * if (hero) 1.35f else 1f, hero, if (hero) 2 else spec.maxLines)
+                add(display, font * if (hero) 1.35f else 1f, hero, if (hero) 2 else if (font <= 12f * scale) 1 else spec.maxLines)
             }
             contentHeight = y + pad - (if (spec.style == WatermarkStyle.INSPECTION) 16f else 9f) * scale
             blocks = all
-            if (contentHeight <= height * spec.maxHeightFraction || font <= 18f * scale) break
+            if (contentHeight <= height * spec.maxHeightFraction || font <= 9f * scale) break
             font *= .9f
         } while (true)
         return Measured(RectF(margin, height - margin - contentHeight, margin + cardWidth, height - margin), blocks, scale)

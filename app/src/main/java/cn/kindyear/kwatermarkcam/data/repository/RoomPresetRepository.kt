@@ -7,6 +7,7 @@ import cn.kindyear.kwatermarkcam.core.database.*
 import cn.kindyear.kwatermarkcam.core.watermark.TemplateRegistry
 import cn.kindyear.kwatermarkcam.domain.model.WatermarkPreset
 import cn.kindyear.kwatermarkcam.domain.model.PresetFolder
+import cn.kindyear.kwatermarkcam.domain.model.CustomWatermarkField
 import cn.kindyear.kwatermarkcam.domain.repository.PresetRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.map
@@ -31,16 +32,20 @@ class RoomPresetRepository @Inject constructor(
         require(registry.templates.any { it.id == templateId })
         dao.list(templateId).firstOrNull()?.id ?: default(templateId).also { dao.insert(it) }.id
     }
-    override suspend fun saveDraft(id: String?, templateId: String, name: String, values: Map<String, String>, hidden: Set<String>, folderId: String?): String = db.withTransaction {
+    override suspend fun saveDraft(id: String?, templateId: String, name: String, values: Map<String, String>, hidden: Set<String>, folderId: String?, customFields: List<CustomWatermarkField>?): String = db.withTransaction {
         validateFolder(folderId)
         require(name.isNotBlank() && name.length <= 80)
         require(values.values.all { it.length <= 500 })
         val existing = id?.let { requireNotNull(dao.get(it)) }
+        val extras = customFields ?: existing?.let { PresetJson.customFields(it.fieldsJson) }.orEmpty()
+        require(extras.size <= CustomWatermarkField.MAX_COUNT)
+        require(extras.map { it.id }.toSet().size == extras.size)
+        require(extras.all { it.id.startsWith("custom:") && it.name.isNotBlank() && it.name.length <= 40 && it.value.length <= 500 })
         val now = System.currentTimeMillis()
         val key = existing?.id ?: UUID.randomUUID().toString()
         dao.run {
             val entity = WatermarkPresetEntity(key, existing?.templateId ?: templateId, name.trim(),
-                PresetJson.encode(values, hidden), existing?.isPinned ?: false,
+                PresetJson.encode(values, hidden, extras), existing?.isPinned ?: false,
                 existing?.sortOrder ?: (inFolder(folderId).filterNot { it.isPinned }.maxOfOrNull { it.sortOrder }?.plus(1) ?: 0),
                 existing?.createdAt ?: now, now, existing?.folderId ?: folderId)
             if (existing == null) insert(entity) else update(entity)
@@ -138,5 +143,5 @@ class RoomPresetRepository @Inject constructor(
 }
 fun WatermarkPresetEntity.model(): WatermarkPreset {
     val (values, hidden) = PresetJson.decode(fieldsJson)
-    return WatermarkPreset(id, templateId, name, values, hidden, isPinned, sortOrder, createdAt, updatedAt, folderId)
+    return WatermarkPreset(id, templateId, name, values, hidden, isPinned, sortOrder, createdAt, updatedAt, folderId, PresetJson.customFields(fieldsJson))
 }

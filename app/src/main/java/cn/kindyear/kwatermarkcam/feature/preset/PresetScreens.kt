@@ -207,12 +207,16 @@ fun PresetEditorScreen(vm: CameraViewModel, back: () -> Unit) {
     var discard by remember { mutableStateOf(false) }
     var visibility by remember { mutableStateOf(false) }
     var reset by remember { mutableStateOf(false) }
+    var customForm by remember { mutableStateOf(false) }
+    var editingCustom by remember { mutableStateOf<CustomWatermarkField?>(null) }
+    var deletingCustom by remember { mutableStateOf<CustomWatermarkField?>(null) }
+    val ui by vm.ui.collectAsStateWithLifecycle()
     val timestamp = remember { System.currentTimeMillis() }
     fun leave() { if (!draft.saving) { if (draft.dirty) discard = true else back() } }
     BackHandler { leave() }
     val template = vm.registry.template(draft.templateId)
     val sampleAddress = stringResource(R.string.sample_address)
-    val snapshot = vm.registry.snapshot(WatermarkPreset(draft.id ?: "draft", draft.templateId, draft.name, draft.values, draft.hidden), WatermarkContext(timestamp, LocationSnapshot(LocationStatus.SUCCESS, address = sampleAddress)), true)
+    val snapshot = vm.registry.snapshot(WatermarkPreset(draft.id ?: "draft", draft.templateId, draft.name, draft.values, draft.hidden, customFields = draft.customFields), WatermarkContext(timestamp, LocationSnapshot(LocationStatus.SUCCESS, latitude = 39.90420, longitude = 116.40740, address = sampleAddress), locationDisplay = ui.settings.locationDisplay), true)
     val content = template.fields.filter { it.editable && it.type != FieldType.ADDRESS }.sortedBy { it.order }
     val automatic = template.fields.filter { !it.editable || it.type == FieldType.ADDRESS }.sortedBy { it.order }
     PageScaffold(stringResource(if (draft.id == null) R.string.new_preset else R.string.edit_preset), ::leave, actions = {
@@ -251,6 +255,30 @@ fun PresetEditorScreen(vm: CameraViewModel, back: () -> Unit) {
                 }
             }
             item {
+                EditorSectionTitle(stringResource(R.string.custom_fields), Icons.Default.AddCircleOutline)
+                OutlinedCard(Modifier.fillMaxWidth().padding(top = 10.dp)) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.custom_fields_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        draft.customFields.forEachIndexed { index, field ->
+                            Column {
+                                ListItem(headlineContent = { Text(field.name) }, supportingContent = { Text(field.value.ifBlank { stringResource(R.string.editor_optional) }, maxLines = 2) },
+                                    trailingContent = { Switch(field.visible, { vm.customFieldVisible(field.id, it) }, enabled = !draft.saving) })
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                    IconButton(enabled = !draft.saving && index > 0, onClick = { vm.moveCustomField(field.id, -1) }) { Icon(Icons.Default.KeyboardArrowUp, stringResource(R.string.custom_move_up, field.name)) }
+                                    IconButton(enabled = !draft.saving && index < draft.customFields.lastIndex, onClick = { vm.moveCustomField(field.id, 1) }) { Icon(Icons.Default.KeyboardArrowDown, stringResource(R.string.custom_move_down, field.name)) }
+                                    IconButton(enabled = !draft.saving, onClick = { editingCustom = field; customForm = true }) { Icon(Icons.Default.Edit, stringResource(R.string.custom_edit_action, field.name)) }
+                                    IconButton(enabled = !draft.saving, onClick = { deletingCustom = field }) { Icon(Icons.Default.DeleteOutline, stringResource(R.string.custom_delete_action, field.name), tint = MaterialTheme.colorScheme.error) }
+                                }
+                            }
+                        }
+                        OutlinedButton(onClick = { editingCustom = null; customForm = true }, enabled = !draft.saving && draft.customFields.size < CustomWatermarkField.MAX_COUNT, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Default.Add, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.add_custom_field))
+                        }
+                        Text(stringResource(R.string.custom_field_limit, draft.customFields.size, CustomWatermarkField.MAX_COUNT), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+            item {
                 EditorSectionTitle(stringResource(R.string.editor_automatic), Icons.Default.Schedule)
                 OutlinedCard(Modifier.fillMaxWidth().padding(top = 10.dp)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -270,7 +298,7 @@ fun PresetEditorScreen(vm: CameraViewModel, back: () -> Unit) {
             }
             item {
                 OutlinedCard(onClick = { if (!draft.saving) visibility = true }, Modifier.fillMaxWidth()) {
-                    ListItem(headlineContent = { Text(stringResource(R.string.editor_show_fields)) }, supportingContent = { Text(stringResource(R.string.editor_field_counts, template.fields.count { it.id !in draft.hidden }, template.fields.size)) }, leadingContent = { Icon(Icons.Default.Visibility, null) }, trailingContent = { Icon(Icons.Default.Tune, null) })
+                    ListItem(headlineContent = { Text(stringResource(R.string.editor_show_fields)) }, supportingContent = { Text(stringResource(R.string.editor_field_counts, template.fields.count { it.id !in draft.hidden } + draft.customFields.count { it.visible }, template.fields.size + draft.customFields.size)) }, leadingContent = { Icon(Icons.Default.Visibility, null) }, trailingContent = { Icon(Icons.Default.Tune, null) })
                 }
                 TextButton(onClick = { reset = true }, enabled = !draft.saving, modifier = Modifier.padding(top = 8.dp)) { Icon(Icons.Default.RestartAlt, null); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.reset)) }
             }
@@ -282,9 +310,19 @@ fun PresetEditorScreen(vm: CameraViewModel, back: () -> Unit) {
             items(template.fields.sortedBy { it.order }, key = { it.id }) { field ->
                 ListItem(headlineContent = { Text(stringResource(field.labelRes)) }, trailingContent = { Switch(field.id !in draft.hidden, { vm.editorHidden(field.id, !it) }, enabled = field.hideable && !draft.saving) })
             }
+            items(draft.customFields, key = { it.id }) { field ->
+                ListItem(headlineContent = { Text(field.name) }, trailingContent = { Switch(field.visible, { vm.customFieldVisible(field.id, it) }, enabled = !draft.saving) })
+            }
         }
         Spacer(Modifier.navigationBarsPadding())
     }
+    if (customForm) CustomFieldDialog(editingCustom, { customForm = false }) { name, value ->
+        val existing = editingCustom
+        if (existing == null) vm.addCustomField(name, value) else vm.editCustomField(existing.id, name, value)
+        customForm = false
+    }
+    deletingCustom?.let { field -> AlertDialog(onDismissRequest = { deletingCustom = null }, title = { Text(stringResource(R.string.delete_custom_field)) }, text = { Text(stringResource(R.string.delete_custom_field_body, field.name)) },
+        confirmButton = { TextButton(onClick = { vm.removeCustomField(field.id); deletingCustom = null }) { Text(stringResource(R.string.delete)) } }, dismissButton = { TextButton(onClick = { deletingCustom = null }) { Text(stringResource(R.string.cancel)) } }) }
     if (reset) AlertDialog(onDismissRequest = { reset = false }, title = { Text(stringResource(R.string.editor_reset_title)) }, text = { Text(stringResource(R.string.editor_reset_body)) }, confirmButton = { TextButton(onClick = { vm.resetEditor(); reset = false }) { Text(stringResource(R.string.reset)) } }, dismissButton = { TextButton(onClick = { reset = false }) { Text(stringResource(R.string.cancel)) } })
     if (discard) AlertDialog(onDismissRequest = { discard = false }, title = { Text(stringResource(R.string.discard_title)) }, text = { Text(stringResource(R.string.discard_message)) },
         confirmButton = { TextButton(onClick = { discard = false; back() }) { Text(stringResource(R.string.discard)) } }, dismissButton = { TextButton(onClick = { discard = false }) { Text(stringResource(R.string.continue_edit)) } })
@@ -365,4 +403,15 @@ private fun FolderDestinationDialog(folders: List<PresetFolder>, sourceId: Strin
         }
     }, confirmButton = { TextButton(enabled = current != sourceId, onClick = { move(current) }) { Text(stringResource(R.string.move_here)) } },
         dismissButton = { TextButton(onClick = dismiss) { Text(stringResource(R.string.cancel)) } })
+}
+
+@Composable
+private fun CustomFieldDialog(field: CustomWatermarkField?, dismiss: () -> Unit, save: (String, String) -> Unit) {
+    var name by remember(field?.id) { mutableStateOf(field?.name.orEmpty()) }
+    var value by remember(field?.id) { mutableStateOf(field?.value.orEmpty()) }
+    AlertDialog(onDismissRequest = dismiss, title = { Text(stringResource(if (field == null) R.string.add_custom_field else R.string.edit_custom_field)) },
+        text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedTextField(name, { name = it.take(40) }, label = { Text(stringResource(R.string.custom_field_name)) }, singleLine = true)
+            OutlinedTextField(value, { value = it.take(500) }, label = { Text(stringResource(R.string.custom_field_value)) }, minLines = 2, maxLines = 4)
+        } }, confirmButton = { TextButton(enabled = name.isNotBlank(), onClick = { save(name, value) }) { Text(stringResource(R.string.confirm)) } }, dismissButton = { TextButton(onClick = dismiss) { Text(stringResource(R.string.cancel)) } })
 }

@@ -3,6 +3,7 @@ package cn.kindyear.kwatermarkcam.core.camera
 import android.content.Context
 import android.util.Log
 import android.util.Rational
+import android.util.Size
 import android.view.OrientationEventListener
 import android.view.Surface
 import androidx.camera.core.*
@@ -31,12 +32,19 @@ class CameraController @Inject constructor(@param:ApplicationContext private val
         val ready: Boolean = false, val hasFlash: Boolean = false, val canSwitch: Boolean = false,
         val front: Boolean = false, val zoom: Float = 1f, val minZoom: Float = 1f,
         val maxZoom: Float = 1f, val error: Boolean = false,
+        val lenses: List<CameraLens> = emptyList(), val activeLensId: String? = null,
+        val unavailableLensIds: Set<String> = emptySet(), val intrinsicZoom: Float = 1f,
     ) {
         val zoomStops: List<Float> get() = (listOf(.5f, 1f, 2f, 3f).filter { it in minZoom..maxZoom } + listOf(minZoom)).distinct().sorted()
     }
     private val mutable = MutableStateFlow(State())
     val state = mutable.asStateFlow()
     private var provider: ProcessCameraProvider? = null
+    private var catalog: CameraCatalog? = null
+    private val failedLenses = mutableSetOf<String>()
+    private val requested = MutableStateFlow<String?>(null)
+    val requestedLens = requested.asStateFlow()
+    fun selectLens(id: String) { if (id !in failedLenses) requested.value = id }
     private var camera: Camera? = null
     private var capture: ImageCapture? = null
     private var preview: Preview? = null
@@ -50,7 +58,7 @@ class CameraController @Inject constructor(@param:ApplicationContext private val
     private val executor = ContextCompat.getMainExecutor(context)
 
     /** Bind only when the lifecycle, preview geometry, lens, or aspect changes. Call on main. */
-    fun bind(owner: LifecycleOwner, previewView: PreviewView, front: Boolean, flash: String) {
+    fun bind(owner: LifecycleOwner, previewView: PreviewView, front: Boolean, flash: String, requestedId: String? = requested.value) {
         unbind()
         view = previewView
         val current = generation
@@ -60,31 +68,45 @@ class CameraController @Inject constructor(@param:ApplicationContext private val
             try {
                 val p = future.get()
                 provider = p
-                val backAvailable = p.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)
-                val frontAvailable = p.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)
-                val useFront = if (front) frontAvailable else !backAvailable && frontAvailable
-                val selector = if (useFront) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
+                val detected = catalog ?: CameraCatalog(p).also { catalog = it }
+                val preferred = requireNotNull(detected.select(front, requestedId?.takeUnless { it in failedLenses })) { "No selectable camera" }
+                val primary = requireNotNull(detected.select(front, null))
                 val rotation = previewView.display?.rotation ?: Surface.ROTATION_0
                 val pixelBudget = (Runtime.getRuntime().maxMemory() * .30 / 4).toLong()
-                val resolution = ResolutionSelector.Builder()
-                    .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY)
-                    .setResolutionFilter { sizes, _ ->
-                        sizes.filter { it.width.toLong() * it.height <= pixelBudget }.ifEmpty { listOf(sizes.last()) }
-                    }.build()
-                val output = ImageCapture.Builder().setResolutionSelector(resolution).setTargetRotation(rotation)
-                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY).setJpegQuality(95).build()
+                fun createOutput(conservative: Boolean): ImageCapture {
+                    val strategy = if (conservative) ResolutionStrategy(Size(1920, 1440), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER) else ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY
+                    val resolution = ResolutionSelector.Builder().setResolutionStrategy(strategy)
+                        .setResolutionFilter { sizes, _ ->
+                            sizes.filter { it.width.toLong() * it.height <= pixelBudget }.ifEmpty { sizes.takeLast(1) }
+                        }.build()
+                    return ImageCapture.Builder().setResolutionSelector(resolution).setTargetRotation(rotation)
+                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY).setJpegQuality(95).build()
+                }
+                var output = createOutput(false)
                 val live = Preview.Builder().setTargetRotation(rotation).build()
                 live.setSurfaceProvider(previewView.surfaceProvider)
                 // Shared ViewPort crops ImageCapture to exactly the preview's visible rectangle.
                 val viewport = ViewPort.Builder(Rational(previewView.width.coerceAtLeast(1), previewView.height.coerceAtLeast(1)), rotation)
                     .setScaleType(ViewPort.FILL_CENTER).build()
-                val group = UseCaseGroup.Builder().setViewPort(viewport).addUseCase(live).addUseCase(output).build()
-                val bound = p.bindToLifecycle(owner, selector, group)
+                fun bind(entry: CameraCatalog.Entry): Camera {
+                    val group = UseCaseGroup.Builder().setViewPort(viewport).addUseCase(live).addUseCase(output).build()
+                    return p.bindToLifecycle(owner, entry.info.cameraSelector, group)
+                }
+                var selected = preferred
+                val bound = try { bind(preferred) } catch (first: Exception) {
+                    Log.w("CameraController", "Preferred camera/resolution unavailable; falling back", first)
+                    p.unbind(live, output)
+                    if (preferred.lens.id != primary.lens.id && first is IllegalArgumentException) failedLenses += preferred.lens.id
+                    selected = primary
+                    output = createOutput(true)
+                    bind(primary)
+                }
                 camera = bound; capture = output; preview = live
                 output.flashMode = if (bound.cameraInfo.hasFlashUnit()) flashValue(flash) else ImageCapture.FLASH_MODE_OFF
-                mutable.value = State(hasFlash = bound.cameraInfo.hasFlashUnit(), canSwitch = backAvailable && frontAvailable, front = useFront)
+                mutable.value = State(hasFlash = bound.cameraInfo.hasFlashUnit(), canSwitch = detected.entries.any { it.lens.front } && detected.entries.any { !it.lens.front }, front = selected.lens.front,
+                    lenses = detected.entries.map { it.lens }, activeLensId = selected.lens.id, unavailableLensIds = failedLenses.toSet(), intrinsicZoom = selected.lens.intrinsicZoom)
                 zoomObserver = Observer { z ->
-                    if (current == generation) mutable.value = mutable.value.copy(zoom = z.zoomRatio, minZoom = z.minZoomRatio, maxZoom = z.maxZoomRatio)
+                    if (current == generation) mutable.value = mutable.value.copy(zoom = z.zoomRatio * selected.lens.intrinsicZoom, minZoom = z.minZoomRatio * selected.lens.intrinsicZoom, maxZoom = z.maxZoomRatio * selected.lens.intrinsicZoom)
                 }
                 cameraObserver = Observer { s ->
                     if (current == generation) mutable.value = mutable.value.copy(ready = s.type == CameraState.Type.OPEN && owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED), error = s.error != null)
@@ -118,7 +140,7 @@ class CameraController @Inject constructor(@param:ApplicationContext private val
     fun zoom(ratio: Float) {
         val s = mutable.value
         if (!s.ready) return
-        camera?.cameraControl?.setZoomRatio(ratio.coerceIn(s.minZoom, s.maxZoom))?.let { observeFailure(it) }
+        camera?.cameraControl?.setZoomRatio((ratio.coerceIn(s.minZoom, s.maxZoom) / s.intrinsicZoom))?.let { observeFailure(it) }
     }
     fun focus(x: Float, y: Float) {
         val point = view?.meteringPointFactory?.createPoint(x, y) ?: return
@@ -162,7 +184,7 @@ class CameraController @Inject constructor(@param:ApplicationContext private val
         val useCases = listOfNotNull(preview, capture)
         if (useCases.isNotEmpty()) provider?.unbind(*useCases.toTypedArray())
         camera = null; capture = null; preview = null; view = null
-        mutable.value = State()
+        mutable.value = State(lenses = catalog?.entries.orEmpty().map { it.lens }, unavailableLensIds = failedLenses.toSet())
     }
     private fun flashValue(value: String) = when (value) { "on" -> ImageCapture.FLASH_MODE_ON; "auto" -> ImageCapture.FLASH_MODE_AUTO; else -> ImageCapture.FLASH_MODE_OFF }
 }

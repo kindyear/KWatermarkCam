@@ -7,5 +7,6 @@ data class AppSettings(
     val flash: String = "off", val grid: Boolean = false,
     val watermark: Boolean = true, val location: Boolean = false,
     val templateId: String = "construction-default", val presetId: String = "",
+    val locationDisplay: LocationDisplay = LocationDisplay.NEARBY_NAME,
 )
 data class PhotoRecord(val id: String, val uri: String, val createdAt: Long, val templateId: String, val presetId: String, val width: Int, val height: Int)

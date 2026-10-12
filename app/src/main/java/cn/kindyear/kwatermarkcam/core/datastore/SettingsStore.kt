@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import cn.kindyear.kwatermarkcam.domain.model.AppSettings
+import cn.kindyear.kwatermarkcam.domain.model.LocationDisplay
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -27,6 +28,7 @@ class SettingsStore @Inject constructor(@ApplicationContext context: Context) {
             location = p[booleanPreferencesKey("location")] ?: false,
             templateId = p[stringPreferencesKey("template")] ?: "construction-default",
             presetId = p[stringPreferencesKey("preset")] ?: "",
+            locationDisplay = LocationDisplay.entries.firstOrNull { it.name == p[stringPreferencesKey("location_display")] } ?: LocationDisplay.NEARBY_NAME,
         )
     }
     suspend fun boolean(key: String, value: Boolean) { store.edit { it[booleanPreferencesKey(key)] = value } }

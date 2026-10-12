@@ -1,0 +1,6 @@
+Create/save/restart, rename/content edit, ordering, visibility, cancellation and deletion: verified
+Back camera, zoom, focus gesture, flash cycle and capture save: verified
+Front camera switching and capture save: verified
+Camera resumes after backgrounding: verified
+
+Photo URI verification: OK (1 test); normalized JPEGs: 1940 x 2586 and 1440 x 1920; EXIF normal, GPS excluded.

@@ -198,3 +198,33 @@ adb -s <设备序列号> shell am instrument -w \
 - `assembleDebug testDebugUnitTest lintDebug --max-workers=1` 成功；10 项单元测试通过，Lint 无错误。发布脚本 6 项测试通过。
 - 本轮 ADB 设备列表为空，没有连接 K40；未安装模拟器，未重跑真机相机、主题图标或许可证交互测试。0.2.0 的设备结果不能当作本轮新图标验证。
 - 开发技术说明从 README 移到 DEVELOPMENT.md，README 以下载、使用、场景、隐私和常见问题为主。
+
+## 定位显示、自定义字段、相机探测与设置改版（2026-10-12）
+
+本轮使用用户连接的 Redmi K40（M2012K11AC），ADB 实际系统为 **Android 13 / API 33**。正式 0.2.1 签名与本地 Debug 不同，为保留正式应用数据，使用 `-Pdebug.separateApp=true` 安装独立包 `cn.kindyear.kwatermarkcam.debug`，桌面名称为“KWatermarkCam 调试”；没有卸载或覆盖正式版。
+
+### 构建和自动化
+
+- 独立 Debug 的 `assembleDebug testDebugUnitTest assembleDebugAndroidTest lintDebug -Pdebug.separateApp=true --max-workers=1` 成功。普通 `assembleDebug testDebugUnitTest assembleDebugAndroidTest lintDebug --max-workers=1` 也成功：**11 项单元测试通过**，Lint **0 错误、31 警告**（未使用资源、KTX、依赖版本和图标资源建议；没有建立忽略基线）。
+- 独立 `assembleRelease --max-workers=1` 成功，R8 与资源缩减通过；此处功能验证阶段未注入发行签名；0.3.0 的签名与发布由后续 Release 流水线执行。
+- K40 上六组设备测试 **28 项通过、0 失败、5.151 秒**：自定义字段 4、预设数据库 7、删除 4、文件夹 4、样式 4、照片管线 5。[原始结果](verification/location-custom-device-tests.txt)。
+- 新测试覆盖 JSON v1/v2 往返和未来版本拒绝、字段数量/名称校验与事务回滚、磁盘重启和复制独立性、旧保存调用保留自定义字段、全部样式的附加字段顺序/隐藏与最大长度布局，以及地点模式持久化、手填覆盖和冻结坐标。
+- CameraLifecycleTest 多次卡在 ActivityScenario 启动阶段，超时后停止，**本轮未通过该自动化测试**。没有相机初始化日志，不能确定启动阻塞的原因；此前版本的成功记录不能代替本轮结果。相机行为采用下方实际 UI 操作与文件验证。
+
+### 真机操作与文件验证
+
+- 自定义字段真实表单：新增、内容输入、保存、结束进程后保留、修改名称和内容、上移、显示开关、删除确认取消、确认删除和保存，均完成。临时 QA 字段已移除。
+- 后置相机初始化、2×/1×切换、点击对焦请求、闪光灯关闭/开启/自动循环、拍照并显示保存成功；切换前置再拍照；回到后置，进入桌面后恢复相机，均完成。此检查不证明自动对焦画质或三种闪光实际曝光差异，也未重测旋转和双指手势。
+- 对两张实际照片的 MediaStore URI 运行独立验证 **1 项通过**：JPEG 可读取，尺寸分别为 **1940×2586、1440×1920**，EXIF Orientation 正常，4:3 比例正确，未包含 GPS 元数据。此项不并入上述 28 项隔离测试计数。
+- UI 检查中的 MIUI 相机权限弹窗在选择“仅在使用中允许”后消失；早期选择器/前台错误没有计为通过。
+- CameraX 公开目录只有 Camera 0（后置、有闪光灯）和 Camera 1（前置、无闪光灯），均 intrinsicZoomRatio=1、未公开 physicalCameraInfos；没有声称 K40 超广角或长焦切换成功。辅助镜头失败回退仍需其他开放多镜头的设备验证。
+- 地点模式在设置中可切换，坐标模式跳过 Geocoder，手填地点保留；模式与格式由测试验证。没有把示例地点当作真实 GPS 或 Geocoder 成功结果，真实定位/附近名称解析仍需不同环境验证。
+- README 六张图片为 K40 实际界面截图，示例项目与手填示例地点，不包含用户真实工程或位置。截图脚手架仅允许独立 Debug 包显式启用；完成后删除示例预设、文件夹和示例照片，恢复原选择/设置。调试期间临时延长息屏时间，结束后恢复 60 秒。
+
+[操作与照片验证摘要](verification/location-custom-ui.txt)。本轮没有模拟器或跨版本验证；兼容性、真实低内存/磁盘满和最大字体等边界仍保持未验证状态。
+
+### 0.3.0 发布前版本核验
+
+- 版本更新为 0.3.0 / versionCode 4 后，再次运行 `assembleDebug testDebugUnitTest assembleDebugAndroidTest lintDebug --max-workers=1`：成功，11 项单元测试通过。
+- `scripts/release.py validate --tag v0.3.0` 与 6 项发布脚本单元测试：通过。
+- 云端签名、附件与发布状态以 [v0.3.0 Release](https://github.com/kindyear/KWatermarkCam/releases/tag/v0.3.0) 和 [Release 工作流](https://github.com/kindyear/KWatermarkCam/actions/workflows/release.yml) 的实际结果为准。

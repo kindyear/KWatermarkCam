@@ -115,3 +115,21 @@ GitHub Actions 使用固定提交 SHA 的 Actions、JDK 21 和已校验的 Gradl
 版本的唯一来源是 `gradle.properties` 中的 `app.versionName` 和 `app.versionCode`。修改版本、等待 CI 成功，再推送完全一致的 `v<版本>` 标签。PR 工作流只有读取权限，不访问发布 Secrets；只有发布任务具备创建 Release 的权限。GitHub Actions 无法代替真机相机和定位测试。
 
 签名设置、首发和后续升级流程见 [发布指南](RELEASING.md)。Actions 依赖由 Dependabot 每月检查更新。
+
+## 正式版共存调试与截图
+
+手机已经安装发行签名包时，使用独立调试包，不卸载正式版：
+
+```sh
+./gradlew assembleDebug assembleDebugAndroidTest -Pdebug.separateApp=true --max-workers=1
+```
+
+生成包 ID 为 `cn.kindyear.kwatermarkcam.debug`，名称“ KWatermarkCam 调试”，版本附 `-dev`。正式版的包名、签名与私有数据不改变。APK 路径仍为 `app/build/outputs/apk/debug/app-debug.apk`；测试 Runner 包为 `cn.kindyear.kwatermarkcam.debug.test`。普通构建和 CI 保持原包 ID。
+
+`ReadmeScreenshotsFixture` 是显式启用的截图演示数据工具，默认测试运行会跳过，且只允许 `.debug` 包。安装主包和测试包后，使用 `am instrument -w -e class cn.kindyear.kwatermarkcam.ReadmeScreenshotsFixture -e readmeScreenshots prepare cn.kindyear.kwatermarkcam.debug.test/androidx.test.runner.AndroidJUnitRunner` 准备示例；界面截图来自实际设备 `screencap`。结束后将参数改为 `cleanup`，清理示例与该示例的拍摄照片并恢复原先选择和偏好。不要把含真实项目/地点的截图提交到仓库。
+
+## 自定义字段与位置格式
+
+Room 数据库仍为 v2，无需新增表。字段 JSON 在有自定义字段时使用 schemaVersion 2，保存字段稳定 ID、名称、内容、显示状态及数组顺序；无自定义字段仍可使用 v1，读取同时兼容 v1/v2，未知未来版本拒绝覆盖。旧调用编辑默认字段时保留已有自定义字段，复制/移动复用同一持久化文档。
+
+`LocationDisplay` 由 DataStore 保存；附近名称模式优先系统 Geocoder 的街道/名称，无名称时回退坐标。经纬度模式跳过 Geocoder。手填地址覆盖自动地点，快门快照冻结当时的格式与内容。

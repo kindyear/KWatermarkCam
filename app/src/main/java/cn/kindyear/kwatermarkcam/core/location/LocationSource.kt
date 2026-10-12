@@ -38,7 +38,7 @@ class LocationSource @Inject constructor(
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
     /** Stale locations remain explicitly labelled CACHED, never as a fresh success. */
-    fun observe(): Flow<LocationSnapshot> = flow {
+    fun observe(resolveAddress: Boolean = true): Flow<LocationSnapshot> = flow {
         if (!hasPermission()) { emit(LocationSnapshot(LocationStatus.PERMISSION_REQUIRED)); return@flow }
         if (!manager.isLocationEnabled) { emit(LocationSnapshot(LocationStatus.SERVICES_OFF)); return@flow }
         emit(LocationSnapshot(LocationStatus.ACQUIRING))
@@ -56,6 +56,10 @@ class LocationSource @Inject constructor(
                     var snapshot = LocationSnapshot(if (fresh) LocationStatus.SUCCESS else LocationStatus.CACHED,
                         location.latitude, location.longitude, measuredAt = location.time, accuracy = location.accuracy)
                     output.emit(snapshot)
+                    if (!resolveAddress) {
+                        writeCache(snapshot)
+                        return@collectLatest
+                    }
                     val address = try { geocoder.address(location.latitude, location.longitude) }
                     catch (e: CancellationException) { throw e }
                     catch (e: Exception) { Log.w("LocationSource", "Reverse geocoding failed", e); null }

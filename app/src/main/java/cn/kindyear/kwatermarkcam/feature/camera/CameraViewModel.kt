@@ -16,6 +16,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
+import java.util.UUID
 
 /** Camera page data is derived from repositories plus a small immutable session state. */
 data class CameraUiState(
@@ -32,8 +33,9 @@ data class EditorUiState(
     val values: Map<String, String> = emptyMap(), val hidden: Set<String> = emptySet(),
     val saving: Boolean = false, val originalName: String = "", val originalValues: Map<String, String> = values,
     val originalHidden: Set<String> = hidden, val folderId: String? = null,
+    val customFields: List<CustomWatermarkField> = emptyList(), val originalCustomFields: List<CustomWatermarkField> = customFields,
 ) {
-    val dirty get() = name != originalName || values != originalValues || hidden != originalHidden
+    val dirty get() = name != originalName || values != originalValues || hidden != originalHidden || customFields != originalCustomFields
 }
 sealed interface UiEvent {
     data class Message(val resource: Int, val retrySave: Boolean = false) : UiEvent
@@ -56,7 +58,7 @@ class CameraViewModel @Inject constructor(
     val currentLocation = mutableLocation.asStateFlow()
     private val time = MutableStateFlow(System.currentTimeMillis())
     val watermark: StateFlow<WatermarkSnapshot?> = combine(ui, time, mutableLocation) { state, now, position ->
-        state.selectedPreset?.let { registry.snapshot(it, WatermarkContext(now, position), state.settings.watermark) }
+        state.selectedPreset?.let { registry.snapshot(it, WatermarkContext(now, position, locationDisplay = state.settings.locationDisplay), state.settings.watermark) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
     private val eventChannel = Channel<UiEvent>(Channel.BUFFERED)
     val events = eventChannel.receiveAsFlow()
@@ -77,7 +79,7 @@ class CameraViewModel @Inject constructor(
                     val selected = all.firstOrNull { it.id == config.presetId } ?: available.firstOrNull() ?: all.firstOrNull()
                     CameraUiState(config, all, selected, photos, loading = false, folders = folders)
                 }.collect { value ->
-                    val locationChanged = mutableUi.value.settings.location != value.settings.location
+                    val locationChanged = mutableUi.value.settings.location != value.settings.location || mutableUi.value.settings.locationDisplay != value.settings.locationDisplay
                     mutableUi.value = value
                     val selected = value.selectedPreset
                     if (selected != null && (selected.id != value.settings.presetId || selected.templateId != value.settings.templateId)) settings.select(selected.templateId, selected.id)
@@ -103,7 +105,7 @@ class CameraViewModel @Inject constructor(
         locationJob?.cancel()
         if (!active) return
         if (!mutableUi.value.settings.location) { mutableLocation.value = LocationSnapshot(); return }
-        locationJob = viewModelScope.launch { location.observe().collect { mutableLocation.value = it } }
+        locationJob = viewModelScope.launch { location.observe(resolveAddress = mutableUi.value.settings.locationDisplay == LocationDisplay.NEARBY_NAME).collect { mutableLocation.value = it } }
     }
     fun bool(key: String, value: Boolean) = operation { settings.boolean(key, value) }
     fun text(key: String, value: String) = operation { settings.text(key, value) }
@@ -138,11 +140,27 @@ class CameraViewModel @Inject constructor(
         val values = preset?.fieldValues?.toMap() ?: registry.defaults(templateId)
         val name = preset?.name.orEmpty()
         val hidden = preset?.hiddenFields?.toSet() ?: emptySet()
-        mutableEditor.value = EditorUiState(preset?.id, templateId, name, values, hidden, originalName = name, originalValues = values, originalHidden = hidden, folderId = preset?.folderId ?: folderId)
+        mutableEditor.value = EditorUiState(preset?.id, templateId, name, values, hidden, originalName = name, originalValues = values, originalHidden = hidden, folderId = preset?.folderId ?: folderId, customFields = preset?.customFields.orEmpty())
     }
     fun editorName(value: String) { mutableEditor.update { it.copy(name = value.take(80)) } }
     fun editorField(id: String, value: String) { mutableEditor.update { it.copy(values = it.values + (id to value.take(500))) } }
     fun editorHidden(id: String, hidden: Boolean) { mutableEditor.update { it.copy(hidden = if (hidden) it.hidden + id else it.hidden - id) } }
+    fun addCustomField(name: String, value: String) {
+        if (name.isBlank() || mutableEditor.value.customFields.size >= CustomWatermarkField.MAX_COUNT) return
+        mutableEditor.update { it.copy(customFields = it.customFields + CustomWatermarkField("custom:" + UUID.randomUUID(), name.trim().take(40), value.take(500))) }
+    }
+    fun editCustomField(id: String, name: String, value: String) {
+        if (name.isBlank()) return
+        mutableEditor.update { it.copy(customFields = it.customFields.map { f -> if (f.id == id) f.copy(name = name.trim().take(40), value = value.take(500)) else f }) }
+    }
+    fun customFieldVisible(id: String, visible: Boolean) { mutableEditor.update { it.copy(customFields = it.customFields.map { f -> if (f.id == id) f.copy(visible = visible) else f }) } }
+    fun removeCustomField(id: String) { mutableEditor.update { it.copy(customFields = it.customFields.filterNot { f -> f.id == id }) } }
+    fun moveCustomField(id: String, direction: Int) {
+        mutableEditor.update { state ->
+            val index = state.customFields.indexOfFirst { it.id == id }; val target = index + direction
+            if (index >= 0 && target in state.customFields.indices) state.copy(customFields = state.customFields.toMutableList().apply { add(target, removeAt(index)) }) else state
+        }
+    }
     fun resetEditor() { mutableEditor.update { it.copy(values = registry.defaults(it.templateId), hidden = emptySet()) } }
     fun saveEditor() {
         val draft = mutableEditor.value
@@ -150,9 +168,9 @@ class CameraViewModel @Inject constructor(
         mutableEditor.update { it.copy(saving = true) }
         viewModelScope.launch {
             try {
-                val id = presets.saveDraft(draft.id, draft.templateId, draft.name, draft.values, draft.hidden, draft.folderId)
+                val id = presets.saveDraft(draft.id, draft.templateId, draft.name, draft.values, draft.hidden, draft.folderId, draft.customFields)
                 settings.select(draft.templateId, id)
-                mutableEditor.update { it.copy(id = id, saving = false, originalName = draft.name, originalValues = draft.values, originalHidden = draft.hidden) }
+                mutableEditor.update { it.copy(id = id, saving = false, originalName = draft.name, originalValues = draft.values, originalHidden = draft.hidden, originalCustomFields = draft.customFields) }
                 eventChannel.send(UiEvent.EditorSaved)
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) { Log.e("CameraViewModel", "Draft save failed", e); mutableEditor.update { it.copy(saving = false) }; eventChannel.send(UiEvent.Message(R.string.data_failed)) }
@@ -169,7 +187,7 @@ class CameraViewModel @Inject constructor(
         val state = mutableCapture.value
         val selected = mutableUi.value.selectedPreset ?: return
         if (state.busy || state.pending != null || !camera.state.value.ready) return
-        val frozen = registry.snapshot(selected, WatermarkContext(System.currentTimeMillis(), mutableLocation.value), mutableUi.value.settings.watermark)
+        val frozen = registry.snapshot(selected, WatermarkContext(System.currentTimeMillis(), mutableLocation.value, locationDisplay = mutableUi.value.settings.locationDisplay), mutableUi.value.settings.watermark)
         mutableCapture.value = state.copy(capturing = true)
         viewModelScope.launch {
             var pending: PendingPhoto? = null

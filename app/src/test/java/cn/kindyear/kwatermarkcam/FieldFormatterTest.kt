@@ -40,4 +40,14 @@ class FieldFormatterTest {
         assertEquals("旧地址", FieldFormatter.resolve(field(FieldType.ADDRESS, "address"), preset, snapshot, "无位置"))
         assertEquals("新地址", FieldFormatter.resolve(field(FieldType.ADDRESS, "address"), preset, update, "无位置"))
     }
+    @Test fun automaticLocationModeSwitchesWithoutChangingManualOverride() {
+        val positioned = context.copy(location = LocationSnapshot(LocationStatus.SUCCESS, 39.123456, 98.654321, "附近公园"))
+        val address = field(FieldType.ADDRESS, "address")
+        assertEquals("附近公园", FieldFormatter.resolve(address, preset, positioned, "无位置"))
+        val coordinates = positioned.copy(locationDisplay = LocationDisplay.COORDINATES)
+        assertEquals("39.12346, 98.65432", FieldFormatter.resolve(address, preset, coordinates, "无位置"))
+        assertEquals("手填现场", FieldFormatter.resolve(address, preset.copy(fieldValues = mapOf("address" to "手填现场")), coordinates, "无位置"))
+        assertEquals("39.12346, 98.65432", FieldFormatter.resolve(address, preset, positioned.copy(location = positioned.location.copy(address = null)), "无位置"))
+    }
+
 }

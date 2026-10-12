@@ -32,7 +32,7 @@ class PresetDatabaseTest {
     @Test fun templateDefaultsAndHiddenDynamicFields() {
         assertEquals(5, registry.templates.size)
         val template = registry.template("construction-default")
-        assertEquals(6, template.fields.size)
+        assertEquals(9, template.fields.size)
         assertFalse(template.fields.first().editable)
         assertEquals(context.getString(R.string.default_project), registry.defaults(template.id)["project"])
         val preset = WatermarkPreset("p", template.id, "测试", registry.defaults(template.id), setOf("note"))
@@ -114,6 +114,6 @@ class PresetDatabaseTest {
     @Test fun jsonRoundTripAndFutureSchemaProtection() {
         val values = mapOf("project" to "引号\"与换行\n中文", "future-field" to "保留")
         assertEquals(values to setOf("note"), PresetJson.decode(PresetJson.encode(values, setOf("note"))))
-        assertTrue(runCatching { PresetJson.decode("{\"schemaVersion\":2,\"values\":{}}") }.isFailure)
+        assertTrue(runCatching { PresetJson.decode("{\"schemaVersion\":3,\"values\":{}}") }.isFailure)
     }
 }
