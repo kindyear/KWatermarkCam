@@ -7,7 +7,7 @@
 给照片加上时间、地点与你的记录。
 工程现场、工作进度，或旅途中的一刻，都能用一张照片说明白。
 
-[**下载 Android 安装包**](https://github.com/kindyear/KWatermarkCam/releases) · [查看更新](https://github.com/kindyear/KWatermarkCam/releases/tag/v0.3.0) · [反馈问题](https://github.com/kindyear/KWatermarkCam/issues)
+[**下载 Android 安装包**](https://github.com/kindyear/KWatermarkCam/releases) · [查看更新](https://github.com/kindyear/KWatermarkCam/releases/tag/v0.3.1) · [反馈问题](https://github.com/kindyear/KWatermarkCam/issues)
 
 Android 10 及以上 · 免费使用 · 无需账号
 
@@ -111,7 +111,7 @@ Android 10 及以上 · 免费使用 · 无需账号
 
 遇到问题或有想法？欢迎 [提交反馈](https://github.com/kindyear/KWatermarkCam/issues)，附上手机型号、Android 版本和操作步骤。分享截图时请留意项目名称和位置等私人信息。
 
-想参与开发，请看 [开发指南](docs/DEVELOPMENT.md)；[功能清单](docs/FEATURES.md)、[测试记录](docs/TESTING.md)和[更新说明](docs/releases/0.3.0.md)保留更详细的信息。
+想参与开发，请看 [开发指南](docs/DEVELOPMENT.md)；[功能清单](docs/FEATURES.md)、[测试记录](docs/TESTING.md)和[更新说明](docs/releases/0.3.1.md)保留更详细的信息。
 
 ## 许可证
 

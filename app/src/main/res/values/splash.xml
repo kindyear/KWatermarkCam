@@ -1,0 +1,4 @@
+<resources>
+    <color name="splash_background">#F6FAF8</color>
+    <bool name="splash_light_bars">true</bool>
+</resources>

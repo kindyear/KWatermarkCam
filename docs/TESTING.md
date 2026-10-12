@@ -228,3 +228,15 @@ adb -s <设备序列号> shell am instrument -w \
 - 版本更新为 0.3.0 / versionCode 4 后，再次运行 `assembleDebug testDebugUnitTest assembleDebugAndroidTest lintDebug --max-workers=1`：成功，11 项单元测试通过。
 - `scripts/release.py validate --tag v0.3.0` 与 6 项发布脚本单元测试：通过。
 - 云端签名、附件与发布状态以 [v0.3.0 Release](https://github.com/kindyear/KWatermarkCam/releases/tag/v0.3.0) 和 [Release 工作流](https://github.com/kindyear/KWatermarkCam/actions/workflows/release.yml) 的实际结果为准。
+
+## 0.3.1 原生启动页（2026-10-12）
+
+- 接入 AndroidX core-splashscreen 1.2.0，MainActivity 启动主题交接到原 Compose 主题，不新增独立 Activity。启动条件只等待初始数据，最长 2 秒；没有固定延时或等待相机权限/定位。
+- 最终 `assembleDebug testDebugUnitTest assembleDebugAndroidTest lintDebug --max-workers=1` 成功（31 秒），11 项单元测试通过，Lint 0 错误；独立 `assembleRelease --max-workers=1` 成功（49 秒），本机未签名，R8 与资源缩减通过。6 项发布脚本测试和 v0.3.1 / versionCode 5 版本核验通过。
+- 用户重新配对后，连接 Redmi K40（M2012K11AC，Android 13 / API 33）。使用独立包 cn.kindyear.kwatermarkcam.debug 覆盖调试版，保留正式版及其数据。
+- 最终包分别在系统浅色、深色下 force-stop 后冷启动，ADB 报 COLD，TotalTime 分别为 1310 ms / 1209 ms；此为一次操作记录，不是性能基准。录屏取帧确认品牌图形和浅色/深色背景，进入拍摄页后 UI 层级确认快门可用。后台后启动报 WARM / 517 ms，并返回拍摄控件。
+- 浅色启动系统栏已配置深色图标，深色配置浅色图标；K40 的 MIUI 启动窗口仍显示白色状态栏图标，浅色背景上的对比度有限。应用进入后由原 Material 3 逻辑控制系统栏。镜头徽标也由系统进行遮罩，不保证各厂商外形完全一致。
+- 第一轮深色检查被小爱悬浮窗遮挡，未记为成功；关闭遮挡后重跑两种主题，最终通过。uiautomator 输出 MIUI ThemeCompatibilityLoader 的缺失文件诊断但仍生成有效 XML；没有把系统工具诊断当成应用崩溃。
+- 最后恢复系统原浅色模式；没有改动息屏时间，也没有安装模拟器。未运行其他 Android 版本启动页测试，没有重跑 0.3.0 的 28 项数据库/照片设备测试或相机生命周期自动化。
+
+[验证摘要](verification/splash-031-summary.json) · [浅色启动录屏帧](verification/splash-031-light.png) · [深色启动录屏帧](verification/splash-031-dark.png)。图片为真实录屏提取帧，未做合成。

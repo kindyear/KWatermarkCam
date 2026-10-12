@@ -77,3 +77,11 @@ EXIF 仅复制明确允许的曝光和基本拍摄信息，不写入 GPS；水�
 删除预设只在整个文件库为空时补建一套默认工程；某模板为空是正常状态，启动不补回已删除模板的预设。主动再次选择该模板时才按需创建。当前选择由同一个 Flow 订阅从提交后的列表修复，避免删除协程读取已变化的 UI 状态导致选择修复遗漏。
 
 相机探测参考官方 [CameraX 配置](https://developer.android.com/media/camera/camerax/configuration)、[CameraInfo](https://developer.android.com/reference/androidx/camera/core/CameraInfo) 与 [Android camera-samples](https://github.com/android/camera-samples)。辅助镜头倍率来自公开的 intrinsicZoomRatio，表示视场的近似相对值，不能视为厂商确认的物理焦段。
+
+## 原生启动页
+
+MainActivity 在 super.onCreate 前调用 installSplashScreen，入口主题使用 Theme.SplashScreen，并通过 postSplashScreenTheme 交接到 Compose 原主题。圆形底衬将品牌图形限制在系统安全区，图形共用桌面 foreground，背景通过 values/values-night 跟随系统明暗。AndroidX core-splashscreen 1.2.0 兼容 API 29/30，API 31+ 使用系统实现。
+
+KeepOnScreenCondition 只读主线程启动标志和单调时钟，Compose SideEffect 同步初始数据 loading 状态；不执行 IO、不等待相机权限或相机打开。数据就绪立即交接，最长等待 2 秒后展示已有加载/错误界面，避免数据库问题把应用永久留在启动页。启动窗口随系统主题，应用进入后仍按 DataStore 的外观设置和动态颜色渲染。
+
+参考 [官方 SplashScreen 指南](https://developer.android.com/develop/ui/views/launch/splash-screen) 与 [AndroidX Core 稳定版记录](https://developer.android.com/jetpack/androidx/releases/core)。

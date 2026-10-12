@@ -1,0 +1,35 @@
+{
+  "version": "0.3.1",
+  "versionCode": 5,
+  "device": "Redmi K40 M2012K11AC Android 13 API 33",
+  "package": "cn.kindyear.kwatermarkcam.debug",
+  "cold_start": [
+    {
+      "system_theme": "light",
+      "total_ms": 1310,
+      "native_screen_observed": true,
+      "shutter_enabled": true
+    },
+    {
+      "system_theme": "dark",
+      "total_ms": 1209,
+      "native_screen_observed": true,
+      "shutter_enabled": true
+    }
+  ],
+  "warm_return_ms": 517,
+  "unit_tests": 11,
+  "lint_errors": 0,
+  "builds": {
+    "debug": "passed",
+    "android_test_apk": "passed",
+    "release_unsigned": "passed"
+  },
+  "system_night_restored": "no",
+  "formal_app_data": "preserved",
+  "limitations": [
+    "No Android 10/11 or other device startup tests",
+    "MIUI retains white status bar icons on its light launch window",
+    "Prior photo/database device suite not rerun"
+  ]
+}

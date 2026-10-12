@@ -2,6 +2,8 @@
 
 ## 已实现
 
+- [x] 官方 AndroidX 原生启动页，系统明暗背景、统一品牌图形和有上限的数据交接，Android 10+ 兼容。
+
 - [x] Kotlin / Compose / Material 3 / CameraX / Hilt / Navigation / Room / DataStore 单模块工程。
 - [x] 相机按需授权、权限空状态、重新授权和系统设置入口。
 - [x] 后置启动、设备能力判断、前后切换、拍照闪光灯三态、触控对焦、双指缩放和有效倍率按钮。
