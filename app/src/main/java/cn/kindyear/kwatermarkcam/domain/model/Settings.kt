@@ -2,7 +2,7 @@ package cn.kindyear.kwatermarkcam.domain.model
 
 /** Stored settings are validated on read, so older/unknown enum values have safe defaults. */
 data class AppSettings(
-    val theme: String = "system", val dynamicColor: Boolean = true,
+    val initialPermissionsHandled: Boolean = false, val theme: String = "system", val dynamicColor: Boolean = true,
     val frontCamera: Boolean = false, val wideAspect: Boolean = false,
     val flash: String = "off", val grid: Boolean = false,
     val watermark: Boolean = true, val location: Boolean = false,

@@ -30,7 +30,7 @@ class PresetDatabaseTest {
     }
     @After fun close() { db.close() }
     @Test fun templateDefaultsAndHiddenDynamicFields() {
-        assertEquals(5, registry.templates.size)
+        assertEquals(9, registry.templates.size)
         val template = registry.template("construction-default")
         assertEquals(9, template.fields.size)
         assertFalse(template.fields.first().editable)
@@ -40,12 +40,12 @@ class PresetDatabaseTest {
         assertTrue(snapshot.rows.any { it.label == context.getString(R.string.field_time) })
         assertFalse(snapshot.rows.any { it.label == context.getString(R.string.field_note) })
     }
-    @Test fun cachedLocationIsMarkedInPhotoButManualOverrideIsNot() {
+    @Test fun locationDisplayDoesNotAddCacheLabelsAndManualOverridesRemain() {
         val preset = WatermarkPreset("p", "construction-default", "测试", registry.defaults("construction-default"))
         val context = WatermarkContext(1_791_441_000_000, LocationSnapshot(LocationStatus.CACHED, 39.0, 98.0, "缓存地址", 1_791_440_000_000))
         val locationLabel = this.context.getString(R.string.field_address)
         val automatic = registry.snapshot(preset, context, true).rows.first { it.label == locationLabel }.value
-        assertTrue(automatic.contains("（缓存 "))
+        assertEquals("缓存地址", automatic)
         val manual = preset.copy(fieldValues = preset.fieldValues + ("address" to "手动地点"))
         assertEquals("手动地点", registry.snapshot(manual, context, true).rows.first { it.label == locationLabel }.value)
     }

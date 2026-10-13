@@ -240,3 +240,30 @@ adb -s <设备序列号> shell am instrument -w \
 - 最后恢复系统原浅色模式；没有改动息屏时间，也没有安装模拟器。未运行其他 Android 版本启动页测试，没有重跑 0.3.0 的 28 项数据库/照片设备测试或相机生命周期自动化。
 
 [验证摘要](verification/splash-031-summary.json) · [浅色启动录屏帧](verification/splash-031-light.png) · [深色启动录屏帧](verification/splash-031-dark.png)。图片为真实录屏提取帧，未做合成。
+
+## 首次授权、模板与图库优化（2026-10-13）
+
+- Redmi K40 / M2012K11AC，ADB 确认 Android 13 / API 33。使用独立 cn.kindyear.kwatermarkcam.debug 包，不卸载或改动正式应用数据；该功能验证阶段没有安装模拟器或发布版本；0.4.0 发布核验见文末。
+- 最终 `assembleDebug testDebugUnitTest assembleDebugAndroidTest lintDebug -Pdebug.separateApp=true --max-workers=1` 成功，11 项单元测试通过，Lint 0 错误 / 33 警告（依赖版本、KTX 和资源建议等）。独立 `assembleRelease --max-workers=1` 成功，R8/资源缩减通过；本机未注入发行签名。
+- K40 上七组 AndroidJUnitRunner 测试 **31 项通过，0 失败，5.589 秒**。覆盖原 28 项预设/文件夹/自定义字段/模板/EXIF/MediaStore 管线，以及新增 3 项图像编辑测试；没有运行或宣称 CameraLifecycleTest 已通过。
+- 新编辑测试检查真实像素旋转/镜像、居中裁剪与黑白/亮度、非法配方拒绝；真实 MediaStore 编辑副本 URI 与尺寸、原图 SHA-256 不变、编辑日志恢复、方向正常、保留原拍摄时间且无 GPS，以及成功后日志清理。模板测试更新至九种样式，缓存位置格式测试改为不追加显示标签。
+- 首轮 31 项中有 1 项编辑保存失败：读取尺寸时 BitmapFactory 的 inJustDecodeBounds 正常返回 null，被错误地用于判断流不可访问。修复为独立检查流并读取尺寸后，最终全组重跑通过。[修复前结果](verification/gallery-edit-before.txt)与[最终 Runner](verification/gallery-template-device-tests.txt)保留证据；另修正四处 Compose 资源读取 Lint 错误，没有禁用检查。
+- 实际首次启动弹出用途说明；点击同意后 MIUI 依次询问相机与定位。允许相机、拒绝定位后仍拍照成功，照片显示 1440×1920，重启未再次显示初次介绍。没有执行清除正式应用数据来模拟首次启动。
+- 图库用六张显式生成的公开梯度样例测试；实际双指事件在照片区域放大到 3.5×、双击到 2.5×、按钮还原到 1×，未缩放时左右翻页改变页码；系统分享面板正常打开后取消，没有选择接收人或发送照片。
+- 实际编辑页验证旋转、水平翻转、1:1 / 3:4 / 16:9 比例选择、黑白、重置、亮度/对比度调节；离开脏草稿出现确认，取消后返回草稿。保存 1:1 黑白调色副本成功，900×900，大图自动打开副本，记录数由 7 变 8，原图仍显示；返回后日期分组瀑布流正常。
+
+- 原生 Splash 最终包在系统浅色/深色各进行一次冷启动：TotalTime 1257 / 1251 ms，仅为此次启动记录；30fps 录屏确认完整圆形边缘、标记渐显、进入相机并存在快门控件。已恢复原系统浅色模式。MIUI 浅色启动窗口状态栏仍使用白色图标，对比度有限；应用页系统栏正常。旧系统和关闭动画设置没有对应真机执行验证。
+- 最终手势回归再次双指放大到 3.5×，缩放后的单指拖动保持当前照片，双指缩小回 1×。六张样例及编辑副本已删除，设备仅保留本轮真实 Debug 拍照；临时手势工具移除，息屏超时恢复原 60 秒。
+- 四个新模板均在最终包上从实际分类筛选进入详情，确认应用按钮完整可见，使用后返回相机并显示正确模板；结束恢复工程模板。[界面结果](verification/gallery-template-ui.txt)。模板示意均使用公开示例字段。
+
+[构建与设备摘要](verification/gallery-optimization-summary.json) · [浅色启动帧](verification/splash-optimized-light.png) · [深色启动帧](verification/splash-optimized-dark.png)。
+
+尚未扩大多 Android 版本、厂商和压力测试范围。图库只展示应用照片，基础裁剪是居中固定比例，没有自由裁剪框或完整照片应用的所有编辑能力；分享检查只验证打开系统面板。真实 GPS/附近名称获取、低内存/磁盘满、超大字体与复杂旋转组合仍需专门验证。
+
+## 0.4.0 发布前版本核验（2026-10-13）
+
+- 版本更新为 0.4.0 / versionCode 6；`scripts/release.py validate --tag v0.4.0` 与 6 项发布脚本测试通过。
+- 普通发行包名的 `assembleDebug testDebugUnitTest assembleDebugAndroidTest lintDebug --max-workers=1` 成功（40 秒）：11 项单元测试通过，Lint 0 错误 / 34 警告。AAPT 核对实际 Debug APK 包名 cn.kindyear.kwatermarkcam、版本 0.4.0 / 6 正确。
+- 独立 `assembleRelease bundleRelease --max-workers=1` 成功（66 秒），R8/资源缩减及 APK/AAB 构建通过；本地未注入发行签名，实际签名由云端发布任务执行。Room 历史 schema 无改动。
+- 本次仅调整发行版本与文档，没有再次运行真机业务测试；上节 31 项 K40 测试与手动 UI 验证是同一功能代码在版本调整前的结果。
+- 签名、附件和云端状态以 [v0.4.0 发布页](https://github.com/kindyear/KWatermarkCam/releases/tag/v0.4.0)、[CI](https://github.com/kindyear/KWatermarkCam/actions/workflows/ci.yml) 与 [Release](https://github.com/kindyear/KWatermarkCam/actions/workflows/release.yml) 的实际完成状态为准。

@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import cn.kindyear.kwatermarkcam.core.watermark.WatermarkRenderer
@@ -14,7 +15,7 @@ import kotlin.math.min
 @Composable
 fun WatermarkSample(renderer: WatermarkRenderer, snapshot: WatermarkSnapshot, modifier: Modifier = Modifier) {
     Canvas(modifier) {
-        drawRect(Color(0xFF52676E))
+        drawRect(Brush.linearGradient(listOf(Color(0xFF436871), Color(0xFF6C8583), Color(0xFFA39B88))))
         val measured = renderer.measure(1080, 1440, snapshot)
         val padding = 16f
         val scale = min((size.width - padding * 2) / measured.bounds.width(), (size.height - padding * 2) / measured.bounds.height())

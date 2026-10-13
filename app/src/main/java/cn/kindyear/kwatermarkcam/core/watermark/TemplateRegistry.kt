@@ -6,8 +6,6 @@ import cn.kindyear.kwatermarkcam.domain.model.*
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
-import java.time.Instant
-import java.time.format.DateTimeFormatter
 
 /** Stable template/field IDs keep existing presets compatible as the catalog grows. */
 @Singleton
@@ -23,7 +21,7 @@ class TemplateRegistry @Inject constructor(@param:ApplicationContext private val
             text("design_company", R.string.field_design_company, 4),
             text("construction_company", R.string.field_construction_company, 5), address(6),
             text("photographer", R.string.field_photographer, 7), text("note", R.string.field_note, 8, context.getString(R.string.default_note)),
-        ), descriptionRes = R.string.description_construction),
+        ), descriptionRes = R.string.description_construction, category = TemplateCategory.CONSTRUCTION),
         WatermarkTemplate("attendance-clock", R.string.template_attendance, listOf(
             time(), text("photographer", R.string.field_employee, 1), text("team", R.string.field_team, 2), address(3), text("note", R.string.field_note, 4),
         ), WatermarkLayoutSpec(widthFraction = .65f, maxWidthOn1080 = 710f, paddingOn1080 = 30f, fontOn1080 = 34f, style = WatermarkStyle.ATTENDANCE), R.string.description_attendance),
@@ -35,7 +33,19 @@ class TemplateRegistry @Inject constructor(@param:ApplicationContext private val
         ), WatermarkLayoutSpec(widthFraction = .74f, maxWidthOn1080 = 810f, style = WatermarkStyle.WORK_LOG), R.string.description_work),
         WatermarkTemplate("travel-postcard", R.string.template_travel, listOf(
             text("place", R.string.field_destination, 0), time(1), address(2), text("note", R.string.field_caption, 3),
-        ), WatermarkLayoutSpec(widthFraction = .68f, maxWidthOn1080 = 740f, fontOn1080 = 34f, style = WatermarkStyle.TRAVEL), R.string.description_travel),
+        ), WatermarkLayoutSpec(widthFraction = .68f, maxWidthOn1080 = 740f, fontOn1080 = 34f, style = WatermarkStyle.TRAVEL), R.string.description_travel, category = TemplateCategory.LIFE),
+        WatermarkTemplate("property-handover", R.string.template_property, listOf(
+            text("project", R.string.field_property, 0), time(1), address(2), text("status", R.string.field_handover_status, 3), text("photographer", R.string.field_inspector, 4), text("note", R.string.field_note, 5),
+        ), WatermarkLayoutSpec(widthFraction = .72f, style = WatermarkStyle.PROPERTY), R.string.description_property, category = TemplateCategory.CONSTRUCTION),
+        WatermarkTemplate("safety-patrol", R.string.template_safety, listOf(
+            text("place", R.string.field_check_area, 0), time(1), address(2), text("status", R.string.field_safety_status, 3), text("photographer", R.string.field_inspector, 4), text("note", R.string.field_note, 5),
+        ), WatermarkLayoutSpec(widthFraction = .70f, paddingOn1080 = 30f, style = WatermarkStyle.SAFETY), R.string.description_safety, category = TemplateCategory.CONSTRUCTION),
+        WatermarkTemplate("delivery-receipt", R.string.template_delivery, listOf(
+            text("asset", R.string.field_delivery_no, 0), time(1), address(2), text("photographer", R.string.field_receiver, 3), text("status", R.string.field_delivery_status, 4), text("note", R.string.field_note, 5),
+        ), WatermarkLayoutSpec(widthFraction = .68f, style = WatermarkStyle.DELIVERY), R.string.description_delivery),
+        WatermarkTemplate("daily-moment", R.string.template_daily, listOf(
+            time(), text("place", R.string.field_moment, 1), address(2), text("note", R.string.field_caption, 3),
+        ), WatermarkLayoutSpec(widthFraction = .64f, fontOn1080 = 36f, paddingOn1080 = 28f, style = WatermarkStyle.MINIMAL), R.string.description_daily, category = TemplateCategory.LIFE),
     )
     fun template(id: String) = templates.firstOrNull { it.id == id } ?: templates.first()
     fun defaults(id: String) = template(id).fields.associate { it.id to it.defaultValue }
@@ -44,11 +54,6 @@ class TemplateRegistry @Inject constructor(@param:ApplicationContext private val
         return WatermarkSnapshot(template.id, preset.id, if (template.showTitle) this.context.getString(template.nameRes) else "",
             template.fields.sortedBy { it.order }.filterNot { it.id in preset.hiddenFields }.map { field ->
                 var value = FieldFormatter.resolve(field, preset, context, this.context.getString(R.string.position_unavailable))
-                val dynamicLocation = field.type == FieldType.COORDINATES || field.type == FieldType.ADDRESS && preset.fieldValues[field.id].isNullOrBlank()
-                if (dynamicLocation && context.location.status == LocationStatus.CACHED && context.location.measuredAt != null) {
-                    val measured = Instant.ofEpochMilli(context.location.measuredAt).atZone(context.zone).format(DateTimeFormatter.ofPattern("MM-dd HH:mm"))
-                    value = this.context.getString(R.string.watermark_cached_location, value, measured)
-                }
                 val coordinateLabel = field.type == FieldType.COORDINATES || field.type == FieldType.ADDRESS && preset.fieldValues[field.id].isNullOrBlank() && context.locationDisplay == LocationDisplay.COORDINATES
                 WatermarkRow(this.context.getString(if (coordinateLabel) R.string.location_coordinates else field.labelRes), value)
             }.filter { it.value.isNotBlank() } + preset.customFields.filter { it.visible && it.value.isNotBlank() }.map { WatermarkRow(it.name, it.value) }, visible, context.timestamp, template.layout)

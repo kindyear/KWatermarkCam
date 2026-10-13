@@ -1,5 +1,6 @@
 package cn.kindyear.kwatermarkcam
 
+import android.animation.ValueAnimator
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.activity.ComponentActivity
@@ -26,13 +27,19 @@ class MainActivity : ComponentActivity() {
         splashScreen.setKeepOnScreenCondition {
             startupDataLoading && SystemClock.uptimeMillis() - startedAt < STARTUP_HANDOFF_LIMIT_MS
         }
+        splashScreen.setOnExitAnimationListener { screen ->
+            if (!ValueAnimator.areAnimatorsEnabled()) screen.remove()
+            else screen.view.animate().alpha(0f).setDuration(180L).withEndAction { screen.remove() }.start()
+        }
         enableEdgeToEdge()
         setContent {
             val model: CameraViewModel = viewModel()
             val state = model.ui.collectAsStateWithLifecycle().value
             SideEffect { startupDataLoading = state.loading }
             val settings = state.settings
-            WatermarkTheme(settings.theme, settings.dynamicColor) { AppNavigation(model) }
+            WatermarkTheme(settings.theme, settings.dynamicColor) {
+                cn.kindyear.kwatermarkcam.core.permissions.InitialPermissions(model) { AppNavigation(model) }
+            }
         }
     }
 

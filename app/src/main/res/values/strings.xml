@@ -38,7 +38,7 @@
     <string name="switch_preset">切换预设</string>
     <string name="select_template">使用模板</string>
     <string name="template_description">时间、工程名称、施工单位、地点、人员与备注</string>
-    <string name="template_count">当前内置 1 个模板，支持多套工程预设</string>
+    <string name="template_count">%1$d 款水印样式</string>
     <string name="delete_title">删除预设？</string>
     <string name="delete_message">将删除「%1$s」。仅在整个预设库为空时自动创建一套默认工程预设。</string>
     <string name="discard_title">放弃未保存的修改？</string>
@@ -75,7 +75,6 @@
     <string name="location_off">系统定位已关闭</string>
     <string name="location_loading">正在获取位置</string>
     <string name="location_success">定位已更新</string>
-    <string name="location_cached">使用缓存位置（%1$s）</string>
     <string name="location_timeout">定位超时，可重试</string>
     <string name="location_failed">定位失败，可手动填写地点</string>
     <string name="location_geocode_failed">地址解析失败，显示经纬度</string>
@@ -132,7 +131,6 @@ Google Play services 受 Google APIs 服务条款约束。
     <string name="empty_preset">正在创建默认工程…</string>
     <string name="photo_unavailable_retry">读取照片失败，可重试或用系统应用打开</string>
     <string name="capture_recovery_failed">无法读取待保存照片，请检查本机文件</string>
-    <string name="watermark_cached_location">%1$s（缓存 %2$s）</string>
     <string name="zoom_value">%1$s×</string>
     <string name="watermark_template_label">水印模板</string>
     <string name="change_template">切换模板</string>

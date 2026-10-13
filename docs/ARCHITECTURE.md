@@ -32,7 +32,7 @@ ImageCapture 的候选尺寸按可用堆的预算限制，优先使用设备支�
 
 ## 场景模板与编辑页面
 
-内置五个稳定模板 ID，工程模板保持 `construction-default` 及原字段 ID。`WatermarkStyle` 描述独立的 Canvas 测量/绘制风格；模板名称只用于选择和管理，快门快照不包含模板标题。`ensureTemplate` 在首次选择时事务创建该模板的默认预设，切换模板同时保存对应预设选择，不在启动时批量创建全部模板的内容。
+内置九个稳定模板 ID，工程模板保持 `construction-default` 及原字段 ID。`WatermarkStyle` 描述独立的 Canvas 测量/绘制风格；模板名称只用于选择和管理，快门快照不包含模板标题。`ensureTemplate` 在首次选择时事务创建该模板的默认预设，切换模板同时保存对应预设选择，不在启动时批量创建全部模板的内容。
 
 编辑页把静态内容与自动时间/地点分组，字段可见性集中在 Bottom Sheet；输入仍根据模板定义生成，草稿不会直接修改持久实体。编辑与模板示意图是最终渲染器在 1080×1440 参考图上的水印区域缩放，不维护第二套文字排版规则。预览明确使用示例地点；真实拍摄冻结实时数据。
 
@@ -59,7 +59,7 @@ ImageCapture 的候选尺寸按可用堆的预算限制，优先使用设备支�
 
 ## 定位与隐私
 
-位置服务封装独立 Flow，订阅时先检查授权和系统开关，读取有测量时间的缓存、Fused 最近位置，再请求低频更新。小于两分钟且精度不超过 150 米才标记为新位置；其他有效位置标记缓存，最多沿用 24 小时；自动地点水印也注明缓存测量时间，手填地址不追加该标记。地址解析失败保留经纬度，20 秒无新位置有超时状态。离开拍摄页或切后台取消订阅并移除更新。
+位置服务封装独立 Flow，订阅时先检查授权和系统开关，读取有测量时间的缓存、Fused 最近位置，再请求低频更新。小于两分钟且精度不超过 150 米才标记为新位置；其他有效位置内部标记 CACHED，最多沿用 24 小时；按产品要求，界面与照片只显示地点内容，不追加缓存标签。测量时间与精度仍用于有效期判断，未把旧位置改成实时 SUCCESS。地址解析失败保留经纬度，20 秒无新位置有超时状态。离开拍摄页或切后台取消订阅并移除更新。
 
 LocationDisplay 在 DataStore 中保存附近名称或经纬度；坐标模式跳过地址解析，切换模式会重启前台订阅。附近名称取系统 Geocoder 的街道/片区或地名，无法得到名称时回退坐标，不是 POI 检索。手填地点始终优先。
 
@@ -80,8 +80,20 @@ EXIF 仅复制明确允许的曝光和基本拍摄信息，不写入 GPS；水�
 
 ## 原生启动页
 
-MainActivity 在 super.onCreate 前调用 installSplashScreen，入口主题使用 Theme.SplashScreen，并通过 postSplashScreenTheme 交接到 Compose 原主题。圆形底衬将品牌图形限制在系统安全区，图形共用桌面 foreground，背景通过 values/values-night 跟随系统明暗。AndroidX core-splashscreen 1.2.0 兼容 API 29/30，API 31+ 使用系统实现。
+MainActivity 在 super.onCreate 前调用 installSplashScreen，入口主题使用 Theme.SplashScreen，并通过 postSplashScreenTheme 交接到 Compose 原主题。使用带透明留白的独立 VectorDrawable：圆形底衬及品牌图形完整落在系统安全圆内，避免 layer-list 与系统二次遮罩造成削角，图形沿用桌面 foreground 的品牌路径，背景通过 values/values-night 跟随系统明暗。AndroidX core-splashscreen 1.2.0 兼容 API 29/30，API 31+ 使用系统实现。
 
 KeepOnScreenCondition 只读主线程启动标志和单调时钟，Compose SideEffect 同步初始数据 loading 状态；不执行 IO、不等待相机权限或相机打开。数据就绪立即交接，最长等待 2 秒后展示已有加载/错误界面，避免数据库问题把应用永久留在启动页。启动窗口随系统主题，应用进入后仍按 DataStore 的外观设置和动态颜色渲染。
 
+Android 12+ 使用 AnimatedVectorDrawable，实现整体轻微缩放、镜头与水印卡片依次显现；旧系统使用同形静态图标。退出窗口采用 180ms 淡出，尊重系统关闭动画的设置，没有为播放动画增加固定启动等待。
+
 参考 [官方 SplashScreen 指南](https://developer.android.com/develop/ui/views/launch/splash-screen) 与 [AndroidX Core 稳定版记录](https://developer.android.com/jetpack/androidx/releases/core)。
+
+## 首次授权与照片图库
+
+InitialPermissions 只在初始数据加载完成、DataStore 首次介绍标记未处理时出现。用户同意后，通过 RequestMultiplePermissions 一次提交 CAMERA、COARSE 和 FINE；系统仍按权限组分别询问。选择稍后或提交请求都会保存介绍标记。授权回调刷新相机权限状态，定位只有获得粗略或精确授权才自动启用；拒绝定位不阻塞相机。后续权限变动由前台恢复检查与原手动入口处理。
+
+图库只观察 PhotoRepository 暴露的本应用记录；按日期的 LazyVerticalStaggeredGrid、HorizontalPager 与缩略图带使用稳定照片 ID。预览在 IO 解码最长边 2400 像素；手势以实际 Fit 图像边界限制平移，支持 1–6× 双指缩放与双击。未缩放时保留翻页手势，缩放后单指平移。系统分享使用 ACTION_SEND、ClipData 与临时只读 URI 授权，打开前检查 URI 可访问。
+
+PhotoEdits 是非破坏性的旋转/翻转/居中裁剪/颜色配方。PhotoEditEngine 供低分辨率预览与原分辨率输出共用；输出最多分配来源和裁剪后两张 Bitmap，解码前评估双图内存预算。预览渲染在 Default，解码、压缩、EXIF 与写入在 IO。编辑在独立草稿中进行，退出脏草稿需确认。
+
+保存副本使用现有 CaptureState 并发锁与持久化日志；原图 URI 从不覆盖。副本已经含原水印像素，因此日志 visible=false、无新水印行，避免重复盖章。准备阶段失败保留原图；副本渲染完成后，发布或记录失败保留副本 JPEG/日志，重启或重试沿用同一 URI。尺寸、方向与可允许的拍摄 EXIF 被保留/修正，GPS 和私有设备信息仍排除。

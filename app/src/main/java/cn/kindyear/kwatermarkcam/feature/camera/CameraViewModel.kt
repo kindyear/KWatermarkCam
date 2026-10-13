@@ -207,6 +207,23 @@ class CameraViewModel @Inject constructor(
             } finally { mutableCapture.update { it.copy(capturing = false, saving = false) } }
         }
     }
+    /** Photo editing shares the capture save state/journal, preventing competing saves or shots. */
+    fun savePhotoEdit(photo: PhotoRecord, edits: PhotoEdits) {
+        val state = mutableCapture.value
+        if (state.busy || state.pending != null) return
+        mutableCapture.update { it.copy(saving = true) }
+        viewModelScope.launch {
+            try {
+                val pending = photoRepository.prepareEdit(photo, edits)
+                mutableCapture.update { it.copy(pending = pending) }
+                savePending(pending)
+            } catch (error: CancellationException) { throw error }
+            catch (error: Exception) {
+                Log.e("CameraViewModel", "Photo edit failed; source retained", error)
+                eventChannel.send(UiEvent.Message(if (error is PhotoMemoryException) R.string.processing_memory else R.string.edit_failed))
+            } finally { mutableCapture.update { it.copy(saving = false) } }
+        }
+    }
     fun retrySave() {
         val state = mutableCapture.value
         val pending = state.pending ?: return

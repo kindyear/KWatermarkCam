@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-13",
+  "versionName": "0.4.0",
+  "versionCode": 6,
+  "unitTests": 11,
+  "releaseScriptTests": 6,
+  "lintErrors": 0,
+  "lintWarnings": 34,
+  "localReleaseSigned": false,
+  "deviceTestsRerunForVersionOnlyChange": false,
+  "functionalHardwareEvidence": "gallery-optimization-summary.json",
+  "sha256": {
+    "app/build/outputs/apk/debug/app-debug.apk": "0c1c735726d98238c80dc651cf8135903b68d94db21b0089bd2631b6ed4d51a1",
+    "app/build/outputs/apk/release/app-release-unsigned.apk": "38077d758d697b6521d1651de9a5baf234040a0974ca4373a14fe5e73e0906de",
+    "app/build/outputs/bundle/release/app-release.aab": "5753f6d49027376935862eb5bb7dabd0f2a1bfc38283e413b34c3780029d9de0"
+  }
+}

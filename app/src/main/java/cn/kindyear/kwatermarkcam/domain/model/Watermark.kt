@@ -12,7 +12,7 @@ data class WatermarkField(
     val defaultValue: String = "", val editable: Boolean = true,
     val hideable: Boolean = true, val order: Int,
 )
-enum class WatermarkStyle { CONSTRUCTION, ATTENDANCE, INSPECTION, WORK_LOG, TRAVEL }
+enum class WatermarkStyle { CONSTRUCTION, ATTENDANCE, INSPECTION, WORK_LOG, TRAVEL, PROPERTY, SAFETY, DELIVERY, MINIMAL }
 
 /** Template-owned normalized geometry; future layouts can extend this schema without changing presets. */
 data class WatermarkLayoutSpec(
@@ -21,7 +21,8 @@ data class WatermarkLayoutSpec(
     val fontOn1080: Float = 32f, val maxHeightFraction: Float = .48f, val maxLines: Int = 3,
     val style: WatermarkStyle = WatermarkStyle.CONSTRUCTION,
 )
-data class WatermarkTemplate(val id: String, val nameRes: Int, val fields: List<WatermarkField>, val layout: WatermarkLayoutSpec = WatermarkLayoutSpec(), val descriptionRes: Int = 0, val showTitle: Boolean = false)
+enum class TemplateCategory { CONSTRUCTION, WORK, LIFE }
+data class WatermarkTemplate(val id: String, val nameRes: Int, val fields: List<WatermarkField>, val layout: WatermarkLayoutSpec = WatermarkLayoutSpec(), val descriptionRes: Int = 0, val showTitle: Boolean = false, val category: TemplateCategory = TemplateCategory.WORK)
 data class WatermarkPreset(
     val id: String, val templateId: String, val name: String,
     val fieldValues: Map<String, String>, val hiddenFields: Set<String> = emptySet(),

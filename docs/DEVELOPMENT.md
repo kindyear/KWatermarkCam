@@ -33,14 +33,14 @@ adb -s <设备序列号> install -r app/build/outputs/apk/debug/app-debug.apk
 adb -s <设备序列号> shell am start -n cn.kindyear.kwatermarkcam/.MainActivity
 ```
 
-打开相机页按需授予相机权限。定位默认关闭，点击位置行开启并授权。地点字段留空时采用自动定位，填写内容时覆盖自动地点。首页“水印模板”行可切换模板；“内容预设”区左侧显示名称，右侧铅笔图标编辑当前、文件夹图标切换预设。预设选择与管理共用文件浏览器：通过文件夹和面包屑浏览所有模板的预设，每个条目标注所属模板；选中预设会同步切换模板。管理页支持新建多级文件夹、重命名文件夹、移动预设、新建/编辑/重命名/复制/置顶/删除预设，以及当前文件夹内长按排序。删除文件夹会把内容移到上一级，不会删除预设。
+首次启动弹窗说明用途，用户同意后集中申请相机与定位；系统分组询问。授予定位后自动开启，拒绝仍可拍照；选择稍后不再自动弹出，仍可通过页面入口按需申请。地点字段留空时采用自动定位，填写内容时覆盖自动地点。首页“水印模板”行可切换模板；“内容预设”区左侧显示名称，右侧铅笔图标编辑当前、文件夹图标切换预设。预设选择与管理共用文件浏览器：通过文件夹和面包屑浏览所有模板的预设，每个条目标注所属模板；选中预设会同步切换模板。管理页支持新建多级文件夹、重命名文件夹、移动预设、新建/编辑/重命名/复制/置顶/删除预设，以及当前文件夹内长按排序。删除文件夹会把内容移到上一级，不会删除预设。
 
 Release 使用 R8 和资源缩减。发布签名由环境变量注入，私钥不包含在仓库中。没有签名变量时本地 `assembleRelease` 只产生未签名 APK；发行必须配置完整签名，详见发布指南。应用商店上架前还需准备隐私政策并完成兼容性矩阵。
 
 ## 权限与隐私
 
-- `CAMERA`：进入拍摄页面申请；拒绝时显示重新授权及系统设置入口。
-- `ACCESS_COARSE_LOCATION` / `ACCESS_FINE_LOCATION`：仅启用定位后按需申请；允许粗略位置，无后台定位权限。
+- `CAMERA`：首次授权或拍摄页手动入口申请；拒绝时显示重新授权及系统设置入口。
+- `ACCESS_COARSE_LOCATION` / `ACCESS_FINE_LOCATION`：首次授权批量申请，之后启用定位时按需申请；允许粗略位置，无后台定位权限。
 - 定位依赖包含普通权限 `ACCESS_NETWORK_STATE`；应用未声明 `INTERNET`。
 - 不申请存储/全相册读取权限；通过 MediaStore 管理本应用拥有的 URI。
 - 不写入 GPS EXIF、设备序列号或 MakerNote；保留方向规范化后的尺寸、拍摄时间及常用曝光参数。**可见水印中的地点仍会出现在照片上**，可手动编辑、隐藏地点或关闭水印。
@@ -53,7 +53,7 @@ Release 使用 R8 和资源缩减。发布签名由环境变量注入，私钥�
 
 Room 数据库 `kwatermarkcam.db`：`preset_folders` 保存文件夹 ID、名称、父目录和创建时间，跨模板组织预设；`presets` 保存文件夹 ID、模板 ID、名称、版本化 JSON 字段/隐藏状态、置顶、当前文件夹内分组排序及时间；`photos` 保存媒体 URI、尺寸、模板和预设 ID。模板定义是 Kotlin 配置，不占用数据库表。
 
-DataStore：主题、动态颜色、相机默认配置、网格线、水印/定位开关及最后选择；独立 `location_cache` 保存位置测量时间、精度与地址，最多沿用 24 小时；界面与自动地点水印均明确标记缓存及测量时间。
+DataStore：主题、动态颜色、相机默认配置、网格线、水印/定位开关、首次权限介绍标记及最后选择；独立 `location_cache` 保存位置测量时间、精度与地址，最多沿用 24 小时；内部保留 CACHED 与测量时间/精度判断，界面和水印不显示缓存标签。
 
 成功照片：`Pictures/WatermarkCamera/WM_yyyyMMdd_HHmmss_SSS_<唯一标识>.jpg`。原始拍摄结果和冻结水印暂存在 `files/pending_photos/`；只有成功发布并写入记录后才清除。保存失败时可在相机页重试或确认删除，进程重启后仍可恢复。MediaStore 使用 `IS_PENDING`，写入完成后公开；重试沿用已创建的 URI。
 
@@ -68,8 +68,9 @@ app/src/main/java/cn/kindyear/kwatermarkcam/
 │   ├── camera/          CameraX 生命周期和控制
 │   ├── location/        前台定位、缓存、地理编码接口
 │   ├── watermark/       模板注册表和独立 Canvas 布局引擎
-│   ├── storage/         持久化拍摄日志、高清合成、MediaStore
+│   ├── storage/         持久化拍摄日志、高清合成、编辑配方、MediaStore
 │   ├── database/        Room 和 JSON 编解码
+│   ├── permissions/     首次权限介绍与批量授权
 │   ├── datastore/       设置持久化
 │   └── designsystem/    Material 3 Theme 和页面骨架
 ├── data/repository/     预设事务和持久化规则
@@ -85,7 +86,7 @@ app/src/main/java/cn/kindyear/kwatermarkcam/
 
 在 `TemplateRegistry.templates` 注册新的 `WatermarkTemplate`：使用永久稳定的模板 ID 和字段 ID，标题/标签放入 `strings.xml`；字段指定类型、默认值、可编辑/隐藏状态和排序。每个模板可定义 `WatermarkLayoutSpec` 的相对宽度、字体、边距、行数等布局参数。现有表单自动根据字段定义生成，预设仍只保存字段值，不保存相机对象或 Compose 结构。
 
-`FieldFormatter` 支持文本、数字、日期、时间、日期时间、地址与坐标。新增字段类型时扩展枚举及格式化分支，并为需要的新编辑方式添加表单控件；图片、Logo、二维码等需要新的渲染块类型和 JSON schema 迁移。新增布局样式时扩展 `WatermarkStyle` 和独立 renderer 的测量/绘制策略，注册模板时提供样式、说明资源与字段；无需修改 CameraX 或预设表。拍摄日志保存布局参数，升级后重试照片仍使用快门时的布局。
+`FieldFormatter` 支持文本、数字、日期、时间、日期时间、地址与坐标。新增字段类型时扩展枚举及格式化分支，并为需要的新编辑方式添加表单控件；图片、Logo、二维码等需要新的渲染块类型和 JSON schema 迁移。新增布局样式时扩展 `WatermarkStyle` 和独立 renderer 的测量/绘制策略，注册模板时提供样式、场景分类、说明资源与字段；无需修改 CameraX 或预设表。拍摄日志保存布局参数，升级后重试照片仍使用快门时的布局。
 
 新字段读取不到值时使用模板默认值；不要重用/更名已有字段 ID。未知旧字段通过 Map 保留，内容编辑不会主动丢弃，避免模板升级导致数据损失。
 
@@ -133,3 +134,9 @@ GitHub Actions 使用固定提交 SHA 的 Actions、JDK 21 和已校验的 Gradl
 Room 数据库仍为 v2，无需新增表。字段 JSON 在有自定义字段时使用 schemaVersion 2，保存字段稳定 ID、名称、内容、显示状态及数组顺序；无自定义字段仍可使用 v1，读取同时兼容 v1/v2，未知未来版本拒绝覆盖。旧调用编辑默认字段时保留已有自定义字段，复制/移动复用同一持久化文档。
 
 `LocationDisplay` 由 DataStore 保存；附近名称模式优先系统 Geocoder 的街道/名称，无名称时回退坐标。经纬度模式跳过 Geocoder。手填地址覆盖自动地点，快门快照冻结当时的格式与内容。
+
+## 图库和编辑验证
+
+图库仅展示应用记录的 URI，不需要相册读取权限。分享通过系统 ACTION_SEND；编辑副本共用 MediaStore 日志，不覆盖原图，不重新叠加水印。中心裁剪预设为 1:1 / 3:4 / 16:9；浏览预览和保存输出分别使用有限尺寸解码与原分辨率解码。
+
+PhotoEditingTest 覆盖旋转、翻转、居中裁剪、黑白/亮度、无效配方、原图字节保持、编辑日志恢复、MediaStore 副本、EXIF 方向/GPS 策略。GalleryDeviceFixture 仅在 .debug 包显式指定 `-e galleryFixture prepare` 时生成六张公开梯度样例，参数 `cleanup` 只删除这些样例及其编辑副本；默认测试不生成演示照片。

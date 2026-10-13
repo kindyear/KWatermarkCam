@@ -66,7 +66,11 @@ fun CameraScreen(vm: CameraViewModel, navigate: (String) -> Unit) {
     var rebind by remember { mutableIntStateOf(0) }
     val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { permission = it }
     val locationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { vm.refreshLocation() }
-    LaunchedEffect(Unit) { if (!permission && !requested) { requested = true; cameraPermission.launch(Manifest.permission.CAMERA) } }
+    val permissionRefresh = cn.kindyear.kwatermarkcam.core.permissions.LocalPermissionRefresh.current
+    LaunchedEffect(permissionRefresh) {
+        permission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+        vm.refreshLocation()
+    }
     LifecycleResumeEffect(Unit) {
         permission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
         vm.foreground(true)
@@ -234,7 +238,7 @@ private fun CameraBottom(vm: CameraViewModel, ui: CameraUiState, capture: Captur
         }
         Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceEvenly) {
             val last = capture.lastPhoto?.uri ?: ui.photos.firstOrNull()?.uri
-            PhotoThumbnail(last, vm.photoRepository, Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).clickable(enabled = !capture.busy) { navigate("gallery") })
+            PhotoThumbnail(last, vm.photoRepository, Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).clickable(enabled = !capture.busy) { navigate("gallery/latest") })
             val shutterDescription = stringResource(R.string.shutter)
             val canShoot = hardware.ready && !capture.busy && capture.pending == null && !ui.loading && !ui.dataError
             Box(Modifier.size(78.dp).clip(CircleShape).border(3.dp, if (canShoot) colors.primary else colors.onSurface.copy(alpha = .38f), CircleShape)
@@ -251,25 +255,25 @@ private fun CameraIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, de
     IconButton(onClick = action, enabled = enabled) { Icon(icon, description) }
 }
 @Composable
-fun PhotoThumbnail(uri: String?, repository: PhotoRepository, modifier: Modifier = Modifier) {
+fun PhotoThumbnail(uri: String?, repository: PhotoRepository, modifier: Modifier = Modifier, description: String? = null) {
     val colors = MaterialTheme.colorScheme
     val bitmap by produceState<android.graphics.Bitmap?>(null, uri) { value = uri?.let { repository.thumbnail(it) } }
+    val label = description ?: stringResource(R.string.gallery)
     Box(modifier.background(colors.surfaceContainerHigh), contentAlignment = Alignment.Center) {
-        if (bitmap != null) Image(requireNotNull(bitmap).asImageBitmap(), stringResource(R.string.gallery), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-        else Icon(Icons.Default.PhotoLibrary, stringResource(R.string.gallery), tint = colors.onSurfaceVariant)
+        if (bitmap != null) Image(requireNotNull(bitmap).asImageBitmap(), label, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+        else Icon(Icons.Default.PhotoLibrary, label, tint = colors.onSurfaceVariant)
     }
 }
 @Composable
 private fun LocationLine(location: LocationSnapshot, enabled: Boolean, display: LocationDisplay, request: () -> Unit, refresh: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    val cachedTime = location.measuredAt?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("MM-dd HH:mm")) }.orEmpty()
     val text = when (location.status) {
         LocationStatus.DISABLED -> stringResource(R.string.location_disabled)
         LocationStatus.PERMISSION_REQUIRED -> stringResource(R.string.location_permission)
         LocationStatus.SERVICES_OFF -> stringResource(R.string.location_off)
         LocationStatus.ACQUIRING -> stringResource(R.string.location_loading)
         LocationStatus.SUCCESS -> stringResource(R.string.location_success)
-        LocationStatus.CACHED -> stringResource(R.string.location_cached, cachedTime)
+        LocationStatus.CACHED -> stringResource(R.string.location_success)
         LocationStatus.TIMEOUT -> stringResource(R.string.location_timeout)
         LocationStatus.FAILED -> stringResource(R.string.location_failed)
         LocationStatus.GEOCODING_FAILED -> stringResource(R.string.location_geocode_failed)
@@ -277,7 +281,7 @@ private fun LocationLine(location: LocationSnapshot, enabled: Boolean, display: 
     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Default.LocationOn, null, Modifier.size(14.dp), tint = colors.primary)
         val value = if (display == LocationDisplay.COORDINATES) location.coordinates() else location.address?.takeIf { it.isNotBlank() } ?: location.coordinates()
-        val label = if (enabled && value != null) "$text · $value" else text
+        val label = if (enabled && value != null) value else text
         Text(label, Modifier.weight(1f).padding(start = 6.dp), color = colors.onSurfaceVariant, style = MaterialTheme.typography.labelSmall, maxLines = 2)
         IconButton(onClick = if (!enabled || location.status == LocationStatus.PERMISSION_REQUIRED) request else refresh) { Icon(if (!enabled) Icons.Default.AddLocationAlt else Icons.Default.Refresh, stringResource(R.string.location_refresh), Modifier.size(20.dp), tint = colors.onSurface) }
     }

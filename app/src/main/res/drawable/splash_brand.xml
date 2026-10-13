@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+<group android:name="brand" android:pivotX="54" android:pivotY="54">
+    <path android:fillColor="#102E39" android:pathData="M54,20A34,34 0,1 0,54,88A34,34 0,1 0,54,20Z" />
+<group android:name="logo" android:pivotX="54" android:pivotY="54" android:scaleX="0.86" android:scaleY="0.86">
+    <path android:fillColor="#ECFFF7" android:fillType="evenOdd" android:pathData="M33,38H41L46,31H61L66,38H75A7,7 0,0 1,82,45V69A7,7 0,0 1,75,76H33A7,7 0,0 1,26,69V45A7,7 0,0 1,33,38Z M54,42A12,12 0,1 0,54,66A12,12 0,1 0,54,42Z" />
+    <path android:name="lens" android:fillColor="#71E3C2" android:fillType="evenOdd" android:pathData="M54,46A8,8 0,1 0,54,62A8,8 0,1 0,54,46Z M54,50A4,4 0,1 1,54,58A4,4 0,1 1,54,50Z" />
+    <path android:name="mark" android:fillColor="#F8C86B" android:fillType="nonZero" android:pathData="M65,63H79A5,5 0,0 1,84,68V77A5,5 0,0 1,79,82H65A5,5 0,0 1,60,77V68A5,5 0,0 1,65,63Z" />
+    <path android:fillColor="#102E39" android:fillType="nonZero" android:pathData="M66,68H78V71H66Z M66,74H74V77H66Z" />
+</group>
+</group>
+</vector>

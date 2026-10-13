@@ -46,6 +46,11 @@ class PhotoRepository internal constructor(
 ) {
     @Inject constructor(@ApplicationContext context: Context, db: AppDatabase, renderer: WatermarkRenderer) :
         this(context, db, renderer, File(context.filesDir, "pending_photos"))
+    private companion object {
+        val SAFE_EXIF_TAGS = listOf(ExifInterface.TAG_MAKE, ExifInterface.TAG_MODEL, ExifInterface.TAG_DATETIME_ORIGINAL,
+            ExifInterface.TAG_EXPOSURE_TIME, ExifInterface.TAG_F_NUMBER, ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY,
+            ExifInterface.TAG_FOCAL_LENGTH, ExifInterface.TAG_WHITE_BALANCE)
+    }
     private val root get() = journalRoot.apply { mkdirs() }
     val photos = db.photos().observe().map { list -> list.map { PhotoRecord(it.id, it.uri, it.createdAt, it.templateId, it.presetId, it.width, it.height) } }
 
@@ -155,9 +160,7 @@ class PhotoRepository internal constructor(
             val old = ExifInterface(pending.original)
             val final = ExifInterface(temporary)
             // Explicit allowlist excludes GPS, device serial numbers and MakerNote.
-            listOf(ExifInterface.TAG_MAKE, ExifInterface.TAG_MODEL, ExifInterface.TAG_DATETIME_ORIGINAL,
-                ExifInterface.TAG_EXPOSURE_TIME, ExifInterface.TAG_F_NUMBER, ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY,
-                ExifInterface.TAG_FOCAL_LENGTH, ExifInterface.TAG_WHITE_BALANCE).forEach { tag -> old.getAttribute(tag)?.let { final.setAttribute(tag, it) } }
+            SAFE_EXIF_TAGS.forEach { tag -> old.getAttribute(tag)?.let { final.setAttribute(tag, it) } }
             final.setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL.toString())
             final.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, bitmap.width.toString())
             final.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, bitmap.height.toString())
@@ -186,8 +189,58 @@ class PhotoRepository internal constructor(
         FileOutputStream(temporary).use { stream -> stream.write(doc.toString().toByteArray()); stream.fd.sync() }
         check(temporary.renameTo(pending.journal))
     }
+    /** Renders an edit to a recoverable new-photo journal. The source URI is never overwritten. */
+    suspend fun prepareEdit(photo: PhotoRecord, edits: PhotoEdits): PendingPhoto = withContext(Dispatchers.IO) {
+        val snapshot = WatermarkSnapshot(photo.templateId, photo.presetId, "", emptyList(), false, System.currentTimeMillis(), WatermarkLayoutSpec())
+        val pending = create(snapshot)
+        var source: Bitmap? = null
+        var edited: Bitmap? = null
+        val temporary = File(pending.directory, "edit.tmp")
+        try {
+            val resolver = context.contentResolver
+            val uri = Uri.parse(photo.uri)
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            requireNotNull(resolver.openInputStream(uri)) { "Photo inaccessible" }.use { BitmapFactory.decodeStream(it, null, bounds) }
+            require(bounds.outWidth > 0 && bounds.outHeight > 0)
+            val runtime = Runtime.getRuntime()
+            val available = runtime.maxMemory() - (runtime.totalMemory() - runtime.freeMemory())
+            val required = bounds.outWidth.toLong() * bounds.outHeight * 8
+            if (required > available * .65 || required > runtime.maxMemory() * .55) throw PhotoMemoryException()
+            source = ImageDecoder.decodeBitmap(ImageDecoder.createSource(resolver, uri)) { decoder, _, _ ->
+                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                decoder.setTargetColorSpace(ColorSpace.get(ColorSpace.Named.SRGB))
+            }
+            edited = PhotoEditEngine.render(source, edits)
+            FileOutputStream(temporary).use { output ->
+                check(edited.compress(Bitmap.CompressFormat.JPEG, 95, output)); output.flush(); output.fd.sync()
+            }
+            val originalExif = requireNotNull(resolver.openInputStream(uri)).use { ExifInterface(it) }
+            ExifInterface(temporary).apply {
+                // Retain capture metadata without copying GPS, serial numbers or MakerNote.
+                SAFE_EXIF_TAGS.forEach { tag -> originalExif.getAttribute(tag)?.let { setAttribute(tag, it) } }
+                setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL.toString())
+                setAttribute(ExifInterface.TAG_IMAGE_WIDTH, edited.width.toString())
+                setAttribute(ExifInterface.TAG_IMAGE_LENGTH, edited.height.toString())
+                setAttribute(ExifInterface.TAG_SOFTWARE, "KWatermarkCam")
+                saveAttributes()
+            }
+            check(temporary.renameTo(pending.rendered))
+            pending
+        } catch (error: OutOfMemoryError) {
+            pending.directory.deleteRecursively()
+            throw PhotoMemoryException()
+        } catch (error: Exception) {
+            pending.directory.deleteRecursively()
+            throw error
+        } finally { source?.recycle(); edited?.recycle(); temporary.delete() }
+    }
+
     /** Removes a local record only; it never deletes a user's system photo. */
     suspend fun forgetRecord(id: String) { db.photos().delete(id) }
+    suspend fun isReadable(uri: String): Boolean = withContext(Dispatchers.IO) {
+        try { context.contentResolver.openFileDescriptor(Uri.parse(uri), "r")?.use { true } ?: false }
+        catch (error: Exception) { Log.w("PhotoRepository", "Photo inaccessible", error); false }
+    }
     suspend fun thumbnail(uri: String, size: Int = 256): Bitmap? = withContext(Dispatchers.IO) {
         try { context.contentResolver.loadThumbnail(Uri.parse(uri), android.util.Size(size, size), null) }
         catch (e: Exception) { Log.w("PhotoRepository", "Owned photo is unavailable", e); null }

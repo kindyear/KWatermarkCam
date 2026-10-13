@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-13",
+  "device": "Redmi K40 / M2012K11AC",
+  "android": 13,
+  "api": 33,
+  "applicationId": "cn.kindyear.kwatermarkcam.debug",
+  "versionName": "0.3.1-dev",
+  "published": false,
+  "unitTests": 11,
+  "deviceTests": {
+    "passed": 31,
+    "failed": 0,
+    "seconds": 5.589,
+    "cameraLifecycleTest": "not run"
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 33
+  },
+  "builds": [
+    "assembleDebug",
+    "testDebugUnitTest",
+    "assembleDebugAndroidTest",
+    "lintDebug",
+    "assembleRelease (unsigned)"
+  ],
+  "debugApkSha256": "ab32ef0a55be43d6a3da16bd8874057936ea4c784f0b0d3b878d3ff764f1fa3d",
+  "coldStarts": {
+    "lightTotalMs": 1257,
+    "darkTotalMs": 1251,
+    "basis": "one observed launch each; not a benchmark"
+  },
+  "splash": {
+    "circularIconVerified": true,
+    "lightAndDarkVerified": true,
+    "nativeAnimatedVector": true,
+    "exitFadeMs": 180,
+    "android10To11": "not device-tested; static icon fallback"
+  },
+  "gallery": {
+    "pinchObserved": 3.5,
+    "doubleTapObserved": 2.5,
+    "saveCopyDimensions": [
+      900,
+      900
+    ],
+    "share": "system chooser opened and cancelled; no recipient selected",
+    "sampleCleanup": "completed: six samples and edited copy removed; one actual debug capture retained",
+    "finalGestureCheck": "pinch 1x to 3.5x, pan retained current page, pinch back to 1x"
+  },
+  "restoredDeviceSettings": {
+    "systemNightMode": "no",
+    "screenOffTimeoutMs": 60000,
+    "temporaryPinchDriver": "removed"
+  },
+  "unsignedReleaseApkSha256": "ce86f0907ae131d95f04e9f34cacfa7f155b8f8545956b245d7bef9130063135"
+}

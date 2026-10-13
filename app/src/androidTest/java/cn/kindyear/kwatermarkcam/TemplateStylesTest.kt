@@ -28,9 +28,9 @@ class TemplateStylesTest {
     private val renderer = WatermarkRenderer()
 
     @Test fun catalogKeepsExistingIdsAndDoesNotPrintTemplateNames() {
-        assertEquals(5, registry.templates.size)
-        assertEquals(5, registry.templates.map { it.id }.toSet().size)
-        assertEquals(5, registry.templates.map { it.layout.style }.toSet().size)
+        assertEquals(9, registry.templates.size)
+        assertEquals(9, registry.templates.map { it.id }.toSet().size)
+        assertEquals(9, registry.templates.map { it.layout.style }.toSet().size)
         assertEquals("construction-default", registry.templates.first().id)
         registry.templates.forEach { template ->
             assertEquals(template.fields.size, template.fields.map { it.id }.toSet().size)
@@ -59,7 +59,7 @@ class TemplateStylesTest {
                 backgrounds += bitmap.getPixel((b.left + 6).toInt(), b.centerY().toInt())
             } finally { bitmap.recycle() }
         }
-        assertEquals(5, backgrounds.size)
+        assertEquals(9, backgrounds.size)
     }
 
     @Test fun templateDefaultsAreLazyAndSelectionTargetsCorrectTemplate() = runBlocking {

@@ -33,7 +33,7 @@ class WatermarkRenderer @Inject constructor() {
             val all = mutableListOf<Block>()
             fun add(text: String, size: Float, bold: Boolean, lines: Int) {
                 val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-                    color = if (spec.style == WatermarkStyle.INSPECTION) Color.rgb(28, 37, 43) else Color.WHITE
+                    color = if (spec.style in setOf(WatermarkStyle.INSPECTION, WatermarkStyle.PROPERTY, WatermarkStyle.DELIVERY)) Color.rgb(28, 37, 43) else Color.WHITE
                     textSize = size
                     typeface = Typeface.create("sans-serif", if (bold) Typeface.BOLD else Typeface.NORMAL)
                     if (spec.style == WatermarkStyle.TRAVEL) setShadowLayer(4f * scale, 0f, 2f * scale, Color.argb(210, 0, 0, 0))
@@ -74,6 +74,10 @@ class WatermarkRenderer @Inject constructor() {
             WatermarkStyle.INSPECTION -> Color.argb(240, 248, 249, 250)
             WatermarkStyle.WORK_LOG -> Color.argb(210, 18, 40, 35)
             WatermarkStyle.TRAVEL -> Color.TRANSPARENT
+            WatermarkStyle.PROPERTY -> Color.argb(240, 232, 243, 250)
+            WatermarkStyle.SAFETY -> Color.argb(220, 75, 28, 36)
+            WatermarkStyle.DELIVERY -> Color.argb(242, 255, 241, 207)
+            WatermarkStyle.MINIMAL -> Color.argb(175, 38, 35, 48)
         }
         val radius = when (style) { WatermarkStyle.ATTENDANCE -> 28f; WatermarkStyle.WORK_LOG -> 6f; else -> 16f }
         if (style != WatermarkStyle.TRAVEL) canvas.drawRoundRect(b, radius * s, radius * s, paint)
@@ -83,6 +87,10 @@ class WatermarkRenderer @Inject constructor() {
             WatermarkStyle.INSPECTION -> Color.rgb(218, 106, 29)
             WatermarkStyle.WORK_LOG -> Color.rgb(100, 220, 167)
             WatermarkStyle.TRAVEL -> Color.WHITE
+            WatermarkStyle.PROPERTY -> Color.rgb(51, 114, 167)
+            WatermarkStyle.SAFETY -> Color.rgb(255, 131, 125)
+            WatermarkStyle.DELIVERY -> Color.rgb(143, 88, 21)
+            WatermarkStyle.MINIMAL -> Color.rgb(216, 192, 249)
         }
         when (style) {
             WatermarkStyle.CONSTRUCTION, WatermarkStyle.WORK_LOG -> canvas.drawRoundRect(b.left + 13 * s, b.top + 24 * s, b.left + 19 * s, b.bottom - 24 * s, 3 * s, 3 * s, paint)
@@ -95,6 +103,14 @@ class WatermarkRenderer @Inject constructor() {
                     canvas.drawLine(b.left + block.x, y, b.right - 28 * s, y, paint)
                 }
             }
+            WatermarkStyle.PROPERTY, WatermarkStyle.DELIVERY -> {
+                canvas.drawRoundRect(b.left + 24 * s, b.top + 10 * s, b.right - 24 * s, b.top + 16 * s, 3 * s, 3 * s, paint)
+            }
+            WatermarkStyle.SAFETY -> {
+                canvas.drawCircle(b.left + 18 * s, b.top + 18 * s, 5 * s, paint)
+                canvas.drawRect(b.left + 28 * s, b.top + 14 * s, b.right - 28 * s, b.top + 20 * s, paint)
+            }
+            WatermarkStyle.MINIMAL -> canvas.drawRoundRect(b.left + 28 * s, b.bottom - 14 * s, b.left + 110 * s, b.bottom - 10 * s, 2 * s, 2 * s, paint)
             WatermarkStyle.TRAVEL -> {
                 paint.setShadowLayer(3 * s, 0f, 1f * s, Color.BLACK)
                 canvas.drawRect(b.left + 24 * s, b.bottom - 10 * s, b.left + 130 * s, b.bottom - 7 * s, paint)

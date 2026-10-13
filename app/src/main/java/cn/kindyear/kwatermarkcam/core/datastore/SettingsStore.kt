@@ -18,6 +18,7 @@ class SettingsStore @Inject constructor(@ApplicationContext context: Context) {
     private val store = context.appDataStore
     val settings: Flow<AppSettings> = store.data.map { p ->
         AppSettings(
+            initialPermissionsHandled = p[booleanPreferencesKey("initial_permissions")] ?: false,
             theme = p[stringPreferencesKey("theme")]?.takeIf { it in listOf("light", "dark", "system") } ?: "system",
             dynamicColor = p[booleanPreferencesKey("dynamic")] ?: true,
             frontCamera = p[booleanPreferencesKey("front")] ?: false,

@@ -1,0 +1,39 @@
+
+cn.kindyear.kwatermarkcam.CustomFieldsTest:....
+cn.kindyear.kwatermarkcam.PresetDatabaseTest:.......
+cn.kindyear.kwatermarkcam.PresetDeletionTest:....
+cn.kindyear.kwatermarkcam.PresetFolderTest:....
+cn.kindyear.kwatermarkcam.TemplateStylesTest:....
+cn.kindyear.kwatermarkcam.PhotoPipelineTest:.....
+cn.kindyear.kwatermarkcam.PhotoEditingTest:.
+Error in editedCopyIsRecoverableAndLeavesOriginalUriAndBytesUnchanged(cn.kindyear.kwatermarkcam.PhotoEditingTest):
+java.lang.IllegalStateException: Photo inaccessible
+	at cn.kindyear.kwatermarkcam.core.storage.PhotoRepository$prepareEdit$2.invokeSuspend(PhotoRepository.kt:200)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:820)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+.
+
+Time: 5.877
+There was 1 failure:
+1) editedCopyIsRecoverableAndLeavesOriginalUriAndBytesUnchanged(cn.kindyear.kwatermarkcam.PhotoEditingTest)
+java.lang.IllegalStateException: Photo inaccessible
+	at cn.kindyear.kwatermarkcam.core.storage.PhotoRepository$prepareEdit$2.invokeSuspend(PhotoRepository.kt:200)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:820)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+
+FAILURES!!!
+Tests run: 31,  Failures: 1
+
+

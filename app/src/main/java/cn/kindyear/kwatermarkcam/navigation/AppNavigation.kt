@@ -53,7 +53,8 @@ fun AppNavigation(vm: CameraViewModel) {
             composable("editor") { PresetEditorScreen(vm) { nav.popBackStack() } }
             composable("templates") { TemplateScreen(vm) { nav.popBackStack() } }
             composable("about") { AboutScreen { nav.popBackStack() } }
-            composable("gallery") { GalleryScreen(vm) { nav.popBackStack() } }
+            composable("gallery/latest") { GalleryScreen(vm, { nav.popBackStack() }, openLatest = true) }
+            composable("gallery") { GalleryScreen(vm, back = { nav.popBackStack() }) }
             composable("settings") { SettingsScreen(vm, { nav.popBackStack() }) { nav.navigate(it) } }
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).navigationBarsPadding())
